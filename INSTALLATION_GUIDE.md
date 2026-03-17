@@ -1,3 +1,8 @@
+---
+layout: default
+title: Installation Guide
+---
+
 # BenchVault v3.2.0 - Installation Guide
 
 Complete installation instructions for server and client computers.

@@ -1,3 +1,8 @@
+---
+layout: default
+title: API Setup Guide
+---
+
 # BenchVault v3.1.0 - Mobile App & API Setup Guide
 
 Complete guide for setting up the mobile app and API server.

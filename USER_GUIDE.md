@@ -1,3 +1,8 @@
+---
+layout: default
+title: User Guide
+---
+
 # BenchVault v3.2.0 - User Guide
 
 Daily usage guide for all BenchVault users.
