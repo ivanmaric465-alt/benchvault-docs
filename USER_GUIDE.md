@@ -3,7 +3,7 @@ layout: default
 title: User Guide
 ---
 
-# BenchVault v3.2.0 - User Guide
+# BenchVault v3.2.2 - User Guide
 
 Daily usage guide for all BenchVault users.
 
@@ -127,7 +127,6 @@ Inventory auto-refreshes every 30 seconds to show changes from other users.
 3. Fill in:
    - **Sample Name**: Unique identifier
    - **Parent Experiment**: Link to source experiment (optional)
-   - **Storage Location**: Where sample is stored
    - **Tags**: For organization
 
 ### Adding Analyses
