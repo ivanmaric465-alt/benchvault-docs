@@ -3,7 +3,7 @@ layout: default
 title: Admin Guide
 ---
 
-# BenchVault v3.3.1 - Administrator Guide
+# BenchVault v3.3.2 - Administrator Guide
 
 Guide for Master users: account management, backups, maintenance, and security.
 

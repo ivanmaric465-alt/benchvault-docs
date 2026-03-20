@@ -3,7 +3,7 @@ layout: default
 title: User Guide
 ---
 
-# BenchVault v3.3.1 - User Guide
+# BenchVault v3.3.2 - User Guide
 
 Daily usage guide for all BenchVault users.
 
