@@ -3,7 +3,7 @@ layout: default
 title: Installation Guide
 ---
 
-# BenchVault v3.3.2 - Installation Guide
+# BenchVault v3.4.0 - Installation Guide
 
 Complete installation instructions for server and client computers.
 
@@ -72,7 +72,7 @@ psql -U postgres
 Install on the computer that hosts the database.
 
 ### Step 1: Run Installer
-1. Download `BenchVault_Setup_3.3.2.exe` (~50 MB)
+1. Download `BenchVault_Setup_3.4.0.exe` (~50 MB)
 2. Right-click -> Run as administrator
 3. Follow installation wizard
 4. Click Finish
@@ -114,7 +114,7 @@ The **Project Selector** dialog appears:
 Install on workstations that connect to the server.
 
 ### Step 1: Run Installer
-1. Download `BenchVault_Setup_Client_3.3.2.exe` (~25-30 MB)
+1. Download `BenchVault_Setup_Client_3.4.0.exe` (~25-30 MB)
 2. Run as administrator
 3. Complete installation
 
@@ -370,12 +370,12 @@ The environment variable takes priority over the database-stored key.
 
 ### Server
 ```cmd
-BenchVault_Setup_3.3.2.exe /SILENT /DIR="C:\BenchVault"
+BenchVault_Setup_3.4.0.exe /SILENT /DIR="C:\BenchVault"
 ```
 
 ### Client
 ```cmd
-BenchVault_Setup_Client_3.3.2.exe /SILENT /DIR="C:\BenchVault Client"
+BenchVault_Setup_Client_3.4.0.exe /SILENT /DIR="C:\BenchVault Client"
 ```
 
 Then configure via `%LOCALAPPDATA%\BenchVault_Client\server_config.json`:
