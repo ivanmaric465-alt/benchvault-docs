@@ -3,7 +3,7 @@ layout: default
 title: API Setup Guide
 ---
 
-# BenchVault v3.1.0 - Mobile App & API Setup Guide
+# BenchVault v3.6.0 - Mobile App & API Setup Guide
 
 Complete guide for setting up the mobile app and API server.
 
@@ -86,13 +86,31 @@ set JWT_SECRET_KEY=your-secret-key-here
 python api_server.py
 ```
 
+### Linux API Server Example
+
+```bash
+export POSTGRES_HOST=localhost
+export POSTGRES_PORT=5432
+export POSTGRES_DB=benchvault_project
+export POSTGRES_USER=postgres
+export POSTGRES_PASSWORD=your_postgres_password
+uvicorn api_server:app --host 0.0.0.0 --port 8000
+```
+
 ### Running the Standalone API Server
 
-**From Source:**
+**From Source (Windows):**
 ```cmd
 cd C:\Users\YourName\eln_project
 pip install -r requirements.txt
 python api_server.py
+```
+
+**From Source (Linux):**
+```bash
+cd ~/benchvault
+source venv/bin/activate
+uvicorn api_server:app --host 0.0.0.0 --port 8000
 ```
 
 **From Compiled Executable:**
@@ -414,11 +432,11 @@ When running `python api_server.py` or `BenchVault_API_Server.exe`:
 
 For installation help, see **INSTALLATION_GUIDE.md**.
 
-For IT deployment, see **DEPLOYMENT_GUIDE.md**.
+For Linux API server deployment, see **LINUX_INSTALLATION_GUIDE.md**.
 
 For end users, see **USER_GUIDE.md**.
 
 ---
 
 **Last Updated:** 2026-03-11
-**Version:** 3.1.0
+**Version:** 3.6.0

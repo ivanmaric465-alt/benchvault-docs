@@ -3,7 +3,7 @@ layout: default
 title: Admin Guide
 ---
 
-# BenchVault v3.6.0 - Administrator Guide
+# BenchVault v4.0.0 - Administrator Guide
 
 Guide for Master users: account management, backups, maintenance, and security.
 
@@ -362,6 +362,9 @@ Runs on port 8000, API docs at `/docs`.
 | Attachments | `{install_dir}\experiment_files\` |
 | Local backups | `{install_dir}\backups\` |
 | Whisper models | `~\.cache\whisper\` |
+| Linux config | `~/.config/benchvault/` |
+| Linux data and attachments | `~/.local/share/BenchVault/` |
+| Linux logs | `~/.local/state/BenchVault/logs/` |
 
 ### Emergency Contacts
 Document your organization's:
