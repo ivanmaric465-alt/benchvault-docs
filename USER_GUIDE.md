@@ -3,7 +3,7 @@ layout: default
 title: User Guide
 ---
 
-# BenchVault v4.0.0 - User Guide
+# BenchVault — User Guide
 
 Daily usage guide for all BenchVault users.
 
@@ -12,10 +12,12 @@ Daily usage guide for all BenchVault users.
 ## Getting Started
 
 ### Launching BenchVault
-1. Double-click "BenchVault" desktop icon
-2. Select your project (if multiple exist)
-3. Login with username and password
-4. Dashboard opens
+1. Double-click the **BenchVault** desktop icon
+2. The login dialog appears with `http://localhost:8000` pre-filled
+   - If your lab uses a shared server, replace this with the server's URL (e.g., `http://192.168.1.50:8000`)
+3. Enter your username and password and click **Login**
+4. First time? Click the **Register** tab to create your account
+5. Dashboard opens
 
 ### Dashboard Overview
 - **Recent Experiments**: Last 5 experiments with quick access
@@ -258,7 +260,7 @@ Go to **Tools -> Transcription Settings** to:
 
 ## AI Assistant
 
-**Requires Claude API key** — ask your Master user to configure it in Application Settings.
+**Requires an API key** (Anthropic or OpenRouter) — ask your Master user to configure it in Application Settings.
 
 The AI Assistant lets you ask questions about your lab data using natural language. It can search experiments, inventory, samples, equipment schedules, and even read text-based analysis files.
 

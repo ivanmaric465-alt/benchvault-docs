@@ -3,7 +3,7 @@ layout: default
 title: API Setup Guide
 ---
 
-# BenchVault v3.6.0 - Mobile App & API Setup Guide
+# BenchVault v4.1.0 - Mobile App & API Setup Guide
 
 Complete guide for setting up the mobile app and API server.
 
@@ -101,14 +101,14 @@ uvicorn api_server:app --host 0.0.0.0 --port 8000
 
 **From Source (Windows):**
 ```cmd
-cd C:\Users\YourName\eln_project
+cd path\to\electronic-lab-notebook
 pip install -r requirements.txt
 python api_server.py
 ```
 
 **From Source (Linux):**
 ```bash
-cd ~/benchvault
+cd ~/electronic-lab-notebook
 source venv/bin/activate
 uvicorn api_server:app --host 0.0.0.0 --port 8000
 ```
@@ -438,5 +438,5 @@ For end users, see **USER_GUIDE.md**.
 
 ---
 
-**Last Updated:** 2026-03-11
-**Version:** 3.6.0
+**Last Updated:** 2026-06-02
+**Version:** 4.1.0

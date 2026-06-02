@@ -3,7 +3,7 @@ layout: default
 title: Admin Guide
 ---
 
-# BenchVault v4.0.0 - Administrator Guide
+# BenchVault v4.1.0 - Administrator Guide
 
 Guide for Master users: account management, backups, maintenance, and security.
 
@@ -66,16 +66,18 @@ Access: **Tools -> Application Settings** (Master only)
 **Note**: When inventory is disabled, Add Reactant in experiments is also disabled.
 
 ### AI Assistant
-- **Claude API Key**: Enter your Anthropic API key (get one at https://console.anthropic.com/)
+- **Anthropic (Claude)**: Select provider and enter your Anthropic API key (https://console.anthropic.com/)
+- **OpenRouter**: Toggle provider to OpenRouter and enter an OpenRouter API key (https://openrouter.ai/)
   - The key is encrypted (Fernet) before being stored in the database
-  - Alternatively, set the `ANTHROPIC_API_KEY` environment variable (takes priority over DB key)
+  - Alternatively, set `ANTHROPIC_API_KEY` or `OPENROUTER_API_KEY` environment variables (takes priority over DB key)
 - **Monthly Budget per User**: Set maximum spending per user per month (default: $5)
   - Budget is tracked automatically based on token usage
   - Users are blocked from using the assistant when their budget is reached
   - Resets at the start of each calendar month
 - **AI Model Management**: Models are stored in the `AIModels` database table
-  - Default models are auto-seeded on first run: Haiku, Sonnet, Opus
-  - When Anthropic releases new models, Master users can add/edit/remove models in App Settings
+  - Default models (Haiku, Sonnet, Opus) are auto-seeded on first run
+  - Master users can add, edit, delete, and reorder models in the AI Models tab
+  - Supports both Anthropic and OpenRouter model IDs
 
 ### Dashboard
 - **Show Recent Activities**: Toggle activity feed visibility
@@ -86,29 +88,20 @@ Changes require application restart to take full effect.
 
 ## Backup and Restore
 
-### Local Backup
+### Server-side Backup
+
+The desktop connects through the API and no longer performs raw PostgreSQL backup/restore operations locally.
 
 #### Creating Backup
-1. Go to **File -> Backup Database**
-2. Choose backup location (default: `backups` folder)
-3. Wait for completion
-4. Backup saved as a `.zip` file with timestamp, containing the SQL dump, DB-referenced experiment and analysis file attachments, and `projects.json`
-
-**Note**: Only files referenced in the database are included in backups. Orphan files (deleted from app but still on disk) are skipped. Use **Tools -> Database Maintenance -> Clean Up Orphan Files** to remove them.
-
-**Recommended**: Backup weekly or before major changes.
+1. Go to **File -> Cloud Backup**
+2. Configure the cloud provider credentials
+3. Click **Backup Now**
+4. The API server creates the database backup and uploads it to the configured provider
 
 #### Restoring Backup
-1. Go to **File -> Restore Database**
-2. Select backup file
-3. Choose restore option:
-   | Option | Description |
-   |--------|-------------|
-   | Keep current accounts | Preserve existing users, restore data only |
-   | Replace all users | Full restore including user accounts |
+Restore operations must be performed on the API server using server-side tooling so the database and attachment folders are restored consistently.
 
-4. Confirm the operation
-5. Application restarts after restore
+**Recommended**: Backup weekly or before major changes.
 
 **Warning**: Restore overwrites current data. Create a backup first!
 
@@ -220,31 +213,17 @@ Click **Send Test Email** to verify configuration.
 
 ---
 
-## Project Management
+## Server Management
 
-### Multiple Projects
-Each project is a separate database. Use for:
-- Different labs/teams
-- Separate research projects
-- Development/production environments
+The desktop uses a single API connection at a time. To connect to another server, log out or restart the desktop and enter the new API URL on the login screen.
 
-### Creating New Project
-1. **File -> Switch Project**
-2. Click **Create New Project**
-3. Enter project details and PostgreSQL credentials
-4. New database created automatically
-
-### Switching Projects
-1. **File -> Switch Project**
-2. Select project from list
-3. Application reconnects to selected database
-
-### Project Info
-**Project -> Current Project Info** shows:
-- Database name and size
+### Server Info
+**Server -> Server Info** shows:
+- API server URL
 - Record counts
-- Last backup time
-- Connection status
+- Database size
+- Cloud backup status
+- Local API process status
 
 ---
 
@@ -341,10 +320,8 @@ Runs on port 8000, API docs at `/docs`.
 ### Menu Locations
 | Task | Location |
 |------|----------|
-| Backup database | File -> Backup Database |
-| Restore database | File -> Restore Database |
 | Cloud backup | File -> Cloud Backup |
-| Switch project | File -> Switch Project |
+| Change API server | Server -> Change Server on Next Login |
 | Application settings | Tools -> Application Settings |
 | AI Assistant | Tools -> AI Assistant (Ctrl+Shift+A) |
 | Database maintenance | Tools -> Database Maintenance |
@@ -354,17 +331,18 @@ Runs on port 8000, API docs at `/docs`.
 | Reset password | User menu -> Manage Users -> Reset Password |
 
 ### File Locations
-| Item | Location |
-|------|----------|
-| Project config | `%LOCALAPPDATA%\BenchVault\projects.json` |
-| Server config | `%LOCALAPPDATA%\BenchVault\server_config.json` |
-| Cloud backup config | `%LOCALAPPDATA%\BenchVault\cloud_backup_config.json` |
-| Attachments | `{install_dir}\experiment_files\` |
-| Local backups | `{install_dir}\backups\` |
-| Whisper models | `~\.cache\whisper\` |
-| Linux config | `~/.config/benchvault/` |
-| Linux data and attachments | `~/.local/share/BenchVault/` |
-| Linux logs | `~/.local/state/BenchVault/logs/` |
+
+| Item | Windows | Linux |
+|------|---------|-------|
+| Project config | `%LOCALAPPDATA%\BenchVault\projects.json` | `~/.config/benchvault/projects.json` |
+| Server config | `%LOCALAPPDATA%\BenchVault\server_config.json` | `~/.config/benchvault/server_config.json` |
+| Cloud backup config | `%LOCALAPPDATA%\BenchVault\cloud_backup_config.json` | `~/.config/benchvault/cloud_backup_config.json` |
+| Attachments (experiments) | `%LOCALAPPDATA%\BenchVault\experiment_files\` | `~/.local/share/BenchVault/experiment_files/` |
+| Attachments (analyses) | `%LOCALAPPDATA%\BenchVault\analysis_files\` | `~/.local/share/BenchVault/analysis_files/` |
+| Local backups | `%LOCALAPPDATA%\BenchVault\backups\` | `~/.local/share/BenchVault/backups/` |
+| Encryption key | `%LOCALAPPDATA%\BenchVault\encryption.key` | `~/.config/benchvault/encryption.key` |
+| Whisper models | `~/.cache/whisper/` | `~/.cache/whisper/` |
+| Transcription pack | `%LOCALAPPDATA%\BenchVault\transcription_pack\` | `~/.local/share/BenchVault/transcription_pack/` |
 
 ### Emergency Contacts
 Document your organization's:

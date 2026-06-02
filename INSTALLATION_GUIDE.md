@@ -3,215 +3,131 @@ layout: default
 title: Installation Guide
 ---
 
-# BenchVault v4.0.0 - Installation Guide
+# BenchVault — Installation Guide
 
-Complete installation instructions for server and client computers.
+Simple installation for Windows users. BenchVault is a multi-user lab data management system with an API-first desktop app.
 
-For Linux source-run setup, PostgreSQL service commands, filesystem paths, and API launch examples, see **LINUX_INSTALLATION_GUIDE.md**.
+For Linux source-run setup, see **docs/LINUX_INSTALLATION_GUIDE.md**.
+For VPS/cloud deployment, see **deploy/VPS_DEPLOY_INSTRUCTIONS.md**.
 
 ---
 
 ## Table of Contents
-1. [System Requirements](#system-requirements)
-2. [PostgreSQL Installation](#postgresql-installation)
-3. [Server Installation](#server-installation)
-4. [Client Installation](#client-installation)
-5. [Network Configuration](#network-configuration)
-6. [Voice Transcription Setup](#voice-transcription-setup)
-7. [AI Assistant Setup](#ai-assistant-setup)
-8. [Troubleshooting](#troubleshooting)
+1. [Quick Start (Single PC)](#quick-start-single-pc)
+2. [Server + Client PCs (lab/team)](#server--client-pcs-labteam)
+3. [Voice Transcription Setup](#voice-transcription-setup)
+4. [AI Assistant Setup](#ai-assistant-setup)
+5. [Troubleshooting](#troubleshooting)
+6. [Silent Installation (IT Deployment)](#silent-installation-it-deployment)
 
 ---
 
-## System Requirements
+## Quick Start (Single PC)
 
-| Component | Server | Client |
-|-----------|--------|--------|
-| OS | Windows 10/11 (64-bit) | Windows 10/11 (64-bit) |
-| RAM | 8 GB recommended | 4 GB minimum |
-| Disk | 500 MB + database | 100 MB |
-| PostgreSQL | Required (installed locally) | Not required |
-| Network | Static IP recommended | Access to server |
+Everything runs on one computer. This is the simplest setup.
 
----
+### Step 1: Install PostgreSQL
 
-## PostgreSQL Installation
+1. Download PostgreSQL 16 from https://www.postgresql.org/download/windows/
+2. Run the installer as administrator
+3. Use default directory: `C:\Program Files\PostgreSQL\16`
+4. Keep all components checked (Server, pgAdmin, Command Line Tools)
+5. Set a strong password for the `postgres` user — **write it down**, you'll need it
+6. Use default port `5432`, complete installation
 
-PostgreSQL must be installed on the **server computer** before BenchVault.
+### Step 2: Install BenchVault
 
-### Step 1: Download
-1. Go to https://www.postgresql.org/download/windows/
-2. Click "Download the installer"
-3. Select version 16.x (or latest)
-4. Download Windows x86-64 installer
+1. Download `BenchVault_Setup.exe`
+2. Right-click → Run as administrator
+3. Follow the installation wizard
+4. Click Finish — a desktop shortcut is created
 
-### Step 2: Install
-1. Run `postgresql-16.x-windows-x64.exe` as administrator
-2. Use default installation directory: `C:\Program Files\PostgreSQL\16`
-3. Keep all components checked (Server, pgAdmin, Command Line Tools)
-4. Set a **strong password** for the `postgres` user
-   - **IMPORTANT**: Write this down - you need it for BenchVault setup
-5. Use default port: `5432`
-6. Complete installation
+### Step 3: Launch the Setup Wizard
 
-### Step 3: Verify Installation
-1. Open Windows Services (`Win+R` -> `services.msc`)
-2. Find `postgresql-x64-16` (or your version)
-3. Status should be **Running**
-4. If stopped, right-click -> Start
+1. Double-click the BenchVault desktop icon
+2. The **Setup Wizard** opens and automatically detects PostgreSQL
+3. If PostgreSQL is running, the wizard shows a **Database Configuration** dialog:
+   - Host: `localhost` (default)
+   - Port: `5432` (default)
+   - User: `postgres` (default)
+   - Password: your PostgreSQL password (set during PostgreSQL install)
+   - Database name: `benchvault_lab` (default, or choose your own)
+4. Click **Test Connection** — should show ✅
+5. Click **Save & Continue** — the database is created automatically
+6. Click **Launch BenchVault**
 
-**Optional Test:**
-```cmd
-psql -U postgres
--- Enter password when prompted
--- Type \q to quit
-```
+The API server starts automatically and the login dialog appears.
 
----
+> **What if I skip?** Click **Skip (Manual Setup)** to configure later via environment variables (`POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`).
 
-## Server Installation
+### Step 4: Login
 
-Install on the computer that hosts the database.
-
-### Step 1: Run Installer
-1. Download `BenchVault_Setup_4.0.0.exe` (~50 MB)
-2. Right-click -> Run as administrator
-3. Follow installation wizard
-4. Click Finish
-
-### Step 2: First Launch
-1. Setup Wizard runs automatically
-2. Checks for PostgreSQL installation (green checkmark = found)
-3. Checks PostgreSQL service is running
-4. Click "Launch BenchVault" when all checks pass
-
-### Step 3: Create Project
-The **Project Selector** dialog appears:
-
-1. Click "Create New Project"
-2. Fill in ALL fields:
-   | Field | Example | Notes |
-   |-------|---------|-------|
-   | Project Name | Chemistry Lab | Display name |
-   | Database Name | chem_lab_2026 | Lowercase, no spaces |
-   | Host | localhost | For local server |
-   | Port | 5432 | PostgreSQL default |
-   | User | postgres | PostgreSQL user |
-   | Password | (your password) | From PostgreSQL install |
-
-3. Click **Test Connection** - should show success
-4. Click **Create Project**
-
-### Step 4: Register First User
-1. Click "Register" on login screen
-2. Enter username, password, full name, email
-3. Click "Register"
-
-**Note**: First user becomes **Master** (administrator).
+1. The login dialog appears with `http://localhost:8000` pre-filled
+2. Click the **Register** tab
+3. Enter a username, password, and email
+4. Click **Create Account** — the first user becomes Master (administrator)
+5. You're logged in
 
 ---
 
-## Client Installation
+## Server + Client PCs (lab/team)
 
-Install on workstations that connect to the server.
+One computer runs PostgreSQL and the API server. Other computers connect to it.
 
-### Step 1: Run Installer
-1. Download `BenchVault_Setup_Client_4.0.0.exe` (~25-30 MB)
-2. Run as administrator
-3. Complete installation
+### On the Server PC
 
-### Step 2: Configure Server Connection
-On first launch, **Server Configuration Dialog** appears:
+1. Install PostgreSQL 16 (same as Quick Start Step 1)
+2. Install BenchVault (same as Quick Start Steps 3–5)
+   - The Setup Wizard will configure the database for you
+   - Register the Master user
+3. Open Windows Firewall:
+   ```cmd
+   netsh advfirewall firewall add rule name="BenchVault API" dir=in action=allow protocol=TCP localport=8000
+   ```
+4. Find your server IP:
+   ```cmd
+   ipconfig
+   ```
+   Note the IPv4 Address (e.g., `192.168.1.50`)
+5. To keep the API server running when you close the desktop, see [Windows Service Setup](#windows-service-setup) below
 
-| Field | Value |
-|-------|-------|
-| Server Address | Server's IP address (e.g., `192.168.1.100`) |
-| Port | `5432` |
-| Database | Same database name as server (e.g., `chem_lab_2026`) |
-| Username | `postgres` |
-| Password | PostgreSQL password |
+### On Each Client PC
 
-1. Click **Test Connection**
-2. Click **Save & Connect**
-
-### Step 3: Login
-Use your BenchVault account (created on server).
+1. Download and install `BenchVault_Setup.exe` (same installer)
+2. Launch BenchVault — the Setup Wizard runs
+3. Since there's no local PostgreSQL, click **Skip (Manual Setup)** in the Database Configuration dialog
+4. In the login dialog, replace `http://localhost:8000` with the server's URL:
+   ```
+   http://192.168.1.50:8000
+   ```
+5. Login with your BenchVault account (or register if you're new)
+6. You're connected
 
 ---
 
-## Network Configuration
+### Windows Service Setup
 
-Required for clients to connect to server over network.
+To run the API server as a background service on Windows Server:
 
-### On Server Computer
+#### Option A: Task Scheduler (simplest)
+1. Open Task Scheduler (`taskschd.msc`)
+2. Create a Basic Task → Trigger: "At startup"
+3. Action: Start a program → `C:\Program Files\BenchVault\BenchVault_API_Server.exe`
 
-#### 1. Configure PostgreSQL for Network Access
-
-**Edit postgresql.conf:**
-```
-Location: C:\Program Files\PostgreSQL\16\data\postgresql.conf
-```
-
-Find and modify:
-```conf
-# Uncomment and change from 'localhost' to '*'
-listen_addresses = '*'
-```
-
-**Edit pg_hba.conf:**
-```
-Location: C:\Program Files\PostgreSQL\16\data\pg_hba.conf
-```
-
-Add at the end:
-```conf
-# Allow connections from any IP (for lab network)
-host    all    all    0.0.0.0/0    md5
-
-# Or restrict to specific subnet (more secure):
-# host    all    all    192.168.1.0/24    md5
-```
-
-#### 2. Restart PostgreSQL Service
-```cmd
-net stop postgresql-x64-16
-net start postgresql-x64-16
-```
-
-Or via Services (`services.msc`): Right-click -> Restart
-
-#### 3. Configure Windows Firewall
-```cmd
-netsh advfirewall firewall add rule name="PostgreSQL" dir=in action=allow protocol=TCP localport=5432
-netsh advfirewall firewall add rule name="BenchVault API" dir=in action=allow protocol=TCP localport=8000
-```
-
-Or use Windows Firewall GUI:
-- Inbound Rules -> New Rule -> Port -> TCP -> 5432 -> Allow
-
-#### 4. Find Server IP Address
-```cmd
-ipconfig
-```
-Note the IPv4 Address (e.g., `192.168.1.100`)
-
-### On Client Computers
-
-#### Test Connectivity
-```cmd
-ping 192.168.1.100
-```
-
-Should receive replies. If timeout:
-- Check both on same network
-- Check firewall rules on server
-- Verify correct IP address
+#### Option B: NSSM (more robust)
+1. Download NSSM from https://nssm.cc/
+2. Run: `nssm install BenchVaultAPI`
+3. Set Application path to `C:\Program Files\BenchVault\BenchVault_API_Server.exe`
+4. Set Startup directory to `C:\Program Files\BenchVault`
+5. On the **Environment** tab, add the `POSTGRES_*` variables from Step 3
+6. Click "Install service"
+7. Run: `nssm start BenchVaultAPI`
 
 ---
 
 ## Voice Transcription Setup
 
-**Optional feature.** Voice transcription uses OpenAI Whisper AI and is not included in the main BenchVault installer due to its large size (~400 MB) and a known conflict with the PyInstaller build (OpenMP DLL clash). It is installed separately via the **Transcription Pack**.
+**Optional feature.** Voice transcription uses OpenAI Whisper AI and is not included in the main BenchVault installer due to its large size (~400 MB). It is installed separately via the **Transcription Pack**.
 
 > **Running from Python source?** See [Option B: Direct Install (Source/Dev)](#option-b-direct-install-sourcedev) below.
 
@@ -219,14 +135,16 @@ Should receive replies. If timeout:
 
 ### Option A: Transcription Pack (Installed App — Recommended)
 
-The Transcription Pack is a self-contained portable Python environment with Whisper and FFmpeg bundled. It does **not** require Python to be installed on the machine and does **not** conflict with the main BenchVault application.
+The Transcription Pack is a self-contained portable Python environment with Whisper and FFmpeg bundled. It does **not** require Python to be installed on the machine.
 
 #### Step 1: Download the Transcription Pack
 1. Open BenchVault
 2. Go to **Tools -> Transcription Settings**
 3. Click **Download Transcription Pack**
 4. Wait for the download to complete (~400 MB)
-5. The pack installs automatically to `%LOCALAPPDATA%\BenchVault\transcription_pack\`
+5. The pack installs automatically to the app's data directory:
+   - Windows: `%LOCALAPPDATA%\BenchVault\transcription_pack\`
+   - Linux: `~/.local/share/BenchVault/transcription_pack/`
 
 #### Step 2: Download a Whisper Model
 1. Still in **Tools -> Transcription Settings**, select a model:
@@ -242,7 +160,7 @@ The Transcription Pack is a self-contained portable Python environment with Whis
    **Recommendation**: Start with `base` — good balance of speed and accuracy.
 
 2. Click **Download** next to your chosen model
-3. Models are cached in `~\.cache\whisper\`
+3. Models are cached in the Whisper cache directory (`~/.cache/whisper/` on both platforms)
 
 #### Step 3: Transcribe Audio
 1. Open an experiment with an audio file attached
@@ -260,9 +178,7 @@ For users running BenchVault from the Python source rather than the installer.
 #### Step 1: Install FFmpeg
 1. Download from https://ffmpeg.org/download.html (Windows builds)
 2. Extract to `C:\ffmpeg`
-3. Add to PATH:
-   - Open System Properties -> Environment Variables
-   - Edit PATH -> Add `C:\ffmpeg\bin`
+3. Add to PATH: System Properties -> Environment Variables -> Edit PATH -> Add `C:\ffmpeg\bin`
 4. Verify: `ffmpeg -version`
 
 #### Step 2: Install Whisper
@@ -282,136 +198,90 @@ Follow Steps 2–3 from Option A above (Tools -> Transcription Settings).
 
 ## AI Assistant Setup
 
-**Optional feature.** The AI Assistant uses the Claude API (by Anthropic) to let users ask natural-language questions about their lab data. It requires an API key and internet access.
+**Optional feature.** The AI Assistant lets users ask natural-language questions about their lab data. Requires an API key from Anthropic or OpenRouter and internet access.
 
 ### Step 1: Get an API Key
-1. Go to https://console.anthropic.com/
-2. Create an account or sign in
-3. Go to API Keys and create a new key
-4. Copy the key (starts with `sk-ant-...`)
+- **Anthropic**: https://console.anthropic.com/ → create account → generate API key
+- **OpenRouter**: https://openrouter.ai/ → create account → generate API key
 
 ### Step 2: Configure in BenchVault
-**Option A — Application Settings (recommended):**
 1. Login as Master user
-2. Go to **Tools -> Application Settings**
-3. Paste the API key in the **Claude API Key** field
+2. Go to **Tools → Application Settings**
+3. Select your provider (Anthropic or OpenRouter) and paste the API key
 4. Set the **Monthly Budget per User** (default: $5)
-5. Click Save
+5. Go to **AI Models** tab to manage models
+6. Click **Save AI Settings**
 
-**Option B — Environment Variable:**
-```cmd
-set ANTHROPIC_API_KEY=sk-ant-your-key-here
-```
-The environment variable takes priority over the database-stored key.
-
-### Step 3: Use the Assistant
-- Any user can open **Tools -> AI Assistant** (or **Ctrl+Shift+A**)
-- Select a model (Haiku is default and cheapest)
-- Ask questions about experiments, inventory, samples, equipment, etc.
+The AI Assistant is available to all users via **Tools → AI Assistant** (Ctrl+Shift+A).
 
 ---
 
 ## Troubleshooting
 
-### PostgreSQL Issues
+### "Cannot connect to API server"
 
-#### "PostgreSQL Not Found" in Setup Wizard
-- Verify PostgreSQL installed: Check `C:\Program Files\PostgreSQL\16` exists
-- Restart computer after PostgreSQL installation
-- Run BenchVault as administrator
+- Check the server URL on the login screen is correct
+- If using `localhost`, ensure you set the `POSTGRES_DB` environment variable (Step 3)
+- Try `http://localhost:8000/api/status` in a web browser — you should see `{"status":"ok"}`
+- If nothing responds, the API server didn't start; check your environment variables
 
-#### "PostgreSQL Service Not Running"
-1. Open Services (`services.msc`)
-2. Find `postgresql-x64-16`
-3. Right-click -> Start
-4. Set Startup Type to "Automatic"
+### "POSTGRES_DB not set"
 
-### Connection Issues
+BenchVault refuses to start without a database name. Set the `POSTGRES_DB` environment variable as shown in Step 3 above.
 
-#### Client Can't Connect to Server
-1. **Verify server works locally**: Open BenchVault on server
-2. **Ping server**: `ping SERVER_IP`
-3. **Check firewall**: Temporarily disable to test
-4. **Check pg_hba.conf**: Ensure network rule is added
-5. **Restart PostgreSQL**: After any config changes
+### "Database does not exist"
 
-#### "Database does not exist"
-- Verify exact database name (case-sensitive)
-- Create project on server first, then connect clients
+- The database name in `POSTGRES_DB` must match exactly
+- Create the database in pgAdmin: right-click Databases → Create → Database → enter name → Save
 
-### Installation Issues
+### "Login Failed"
 
-#### Installer Won't Run
-- Right-click -> Run as administrator
-- Check Windows SmartScreen isn't blocking
+- Make sure you're using the correct password
+- If this is a fresh install, register a new account on the Register tab
+- First user is always Master
 
-#### "Cannot write to Program Files"
-- Must run as administrator
-- Or install to different location (e.g., `C:\BenchVault`)
+### "Only Master accounts can..."
 
-### Transcription Issues
-
-#### Transcription Pack download fails
-- Check internet connection
-- Retry — the download is ~400 MB and may time out on slow connections
-- Verify `%LOCALAPPDATA%\BenchVault\` folder is writable
-
-#### "Model download failed"
-- Check internet connection
-- Try a smaller model first (`tiny` or `base`)
-- Models are cached in `~\.cache\whisper\`
-
-#### Transcription produces no output or errors
-- Ensure the audio file is a supported format (MP3, WAV, M4A, OGG, FLAC, AAC)
-- Verify the Transcription Pack is fully installed (Tools -> Transcription Settings should show pack status)
-- Try the `tiny` model to rule out memory issues
+Some features (email settings, password reset, application settings, AI model management) are restricted to Master users. The first registered user is always Master. A Master can promote other users in Application Settings.
 
 ---
 
 ## Silent Installation (IT Deployment)
 
-### Server
+### Desktop Installer
 ```cmd
-BenchVault_Setup_4.0.0.exe /SILENT /DIR="C:\BenchVault"
+BenchVault_Setup.exe /SILENT /DIR="C:\BenchVault"
 ```
 
-### Client
+### API Server (Windows Service)
 ```cmd
-BenchVault_Setup_Client_4.0.0.exe /SILENT /DIR="C:\BenchVault Client"
+nssm install BenchVaultAPI "C:\Program Files\BenchVault\BenchVault_API_Server.exe"
+nssm set BenchVaultAPI AppDirectory "C:\Program Files\BenchVault"
+nssm set BenchVaultAPI AppEnvironmentExtra POSTGRES_HOST=localhost POSTGRES_PORT=5432 POSTGRES_DB=benchvault POSTGRES_USER=postgres POSTGRES_PASSWORD=your_password
+nssm start BenchVaultAPI
 ```
 
-Then configure via `%LOCALAPPDATA%\BenchVault_Client\server_config.json`:
-```json
-{
-  "host": "192.168.1.100",
-  "port": "5432",
-  "database": "chem_lab_2026",
-  "user": "postgres",
-  "password": "your_password"
-}
+### Register First User via API
+```cmd
+curl -X POST http://localhost:8000/api/v1/auth/register ^
+  -H "Content-Type: application/json" ^
+  -d "{\"username\":\"master\",\"password\":\"master123\",\"email\":\"admin@lab.com\",\"full_name\":\"Lab Admin\"}"
 ```
 
 ---
 
 ## Post-Installation Checklist
 
-### Server
 - [ ] PostgreSQL installed and running
-- [ ] BenchVault server installed
-- [ ] Project created successfully
+- [ ] Database created (`benchvault` or your name)
+- [ ] `POSTGRES_DB` (and other `POSTGRES_*`) environment variables set
+- [ ] BenchVault desktop installed
+- [ ] API server auto-starts on localhost login (or manually running on server)
 - [ ] Master user registered
-- [ ] Firewall rules configured (multi-user)
-- [ ] pg_hba.conf updated (multi-user)
-
-### Client
-- [ ] BenchVault client installed
-- [ ] Server connection configured
-- [ ] Can login with BenchVault account
-- [ ] Can view experiments/inventory
+- [ ] Firewall rules for port 8000 (if using client PCs)
 
 ### Optional
-- [ ] Email settings configured (notifications)
-- [ ] Cloud backup configured
-- [ ] Voice transcription setup
-- [ ] AI Assistant configured (Tools -> Application Settings -> Claude API Key)
-- [ ] Backup schedule established
+- [ ] Email settings configured (User → Email Settings, Master only)
+- [ ] Cloud backup configured (File → Cloud Backup)
+- [ ] Voice transcription pack installed
+- [ ] AI Assistant configured (Tools → Application Settings → AI Models tab)
