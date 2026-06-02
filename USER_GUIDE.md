@@ -13,11 +13,14 @@ Daily usage guide for all BenchVault users.
 
 ### Launching BenchVault
 1. Double-click the **BenchVault** desktop icon
-2. The login dialog appears with `http://localhost:8000` pre-filled
-   - If your lab uses a shared server, replace this with the server's URL (e.g., `http://192.168.1.50:8000`)
-3. Enter your username and password and click **Login**
-4. First time? Click the **Register** tab to create your account
-5. Dashboard opens
+2. If the Setup Wizard appears:
+   - On the server/single-PC host, configure PostgreSQL and click **Launch Local BenchVault**
+   - On a client workstation, click **Connect to Existing Server**
+3. The login dialog appears with `http://localhost:8000` pre-filled
+   - If your lab uses a shared server or VPS, replace this with the server's URL (e.g., `http://192.168.1.50:8000`)
+4. Enter your username and password and click **Login**
+5. First time? Click the **Register** tab to create your account
+6. Dashboard opens
 
 ### Dashboard Overview
 - **Recent Experiments**: Last 5 experiments with quick access

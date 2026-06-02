@@ -11,7 +11,7 @@ Complete guide for setting up the mobile app and API server.
 
 ## Overview
 
-BenchVault includes a Flutter mobile app that connects to the desktop app's API server for:
+BenchVault includes a Flutter mobile app that connects to the same BenchVault API server used by desktop clients for:
 - **Experiments**: Browse, view details, add photos/voice recordings
 - **Inventory**: Search chemicals, scan QR codes
 - **Equipment**: View and create reservations
@@ -23,16 +23,17 @@ BenchVault includes a Flutter mobile app that connects to the desktop app's API 
 
 ## Quick Start (Recommended)
 
-### Option 1: Start API from Desktop App (Easiest)
+### Option 1: Use the BenchVault API Host (Easiest)
 
-1. Launch BenchVault desktop app
-2. User menu → Start API Server
-3. Note the API URL shown (e.g., `http://192.168.1.100:8000`)
-4. On mobile app login screen, expand "API Server Settings"
-5. Enter the API URL
-6. Login with your BenchVault credentials
+1. On the server/single-PC host, install PostgreSQL and launch BenchVault
+2. Let the Setup Wizard configure the local API database
+3. Log in once with the server URL set to `http://localhost:8000`; the local API server starts automatically
+4. Find the host's LAN address (for example, `192.168.1.100`)
+5. On the mobile app login screen, expand **API Server Settings**
+6. Enter the API URL, for example `http://192.168.1.100:8000`
+7. Login with your BenchVault credentials
 
-**Done!** The desktop app manages the API server for you - no environment variables needed.
+**Done!** Mobile and desktop clients use the same API URL. PostgreSQL is not installed on client devices.
 
 ---
 
@@ -44,7 +45,7 @@ For advanced users who want to run the API server independently.
 
 1. PostgreSQL 16 installed and running
 2. Python 3.8+ installed
-3. BenchVault database exists (created via desktop app or manually)
+3. BenchVault database exists (created by the Setup Wizard, VPS provisioner, or manually)
 
 ### Environment Variables Setup
 
@@ -405,26 +406,26 @@ python api_server.py > api.log 2>&1
 
 ## Environment Variables Reference
 
-### Desktop App Launches API
+### Desktop App Auto-Starts Local API
 
-When starting API from desktop app User menu:
-- ✓ Automatically sets `API_DB_*` variables
-- ✓ Uses current project's database
-- ✓ Manages process lifecycle
-- ✗ **No manual environment variable setup needed**
+When logging in with `http://localhost:8000` on the server/single-PC host:
+- ✓ Reads the Setup Wizard's saved database configuration
+- ✓ Sets `API_DB_*` variables for the local API subprocess
+- ✓ Manages the local API process lifecycle
+- ✗ Client workstations do not need local database environment variables
 
 ### Standalone API Server
 
-When running `python api_server.py` or `BenchVault_API_Server.exe`:
-- ✓ Must set environment variables manually
-- ✓ Checks `API_DB_*` variables first
-- ✓ Falls back to `POSTGRES_*` variables
-- ✓ Uses defaults if neither set
+When running `python api_server.py`, `uvicorn api_server:app`, or `BenchVault_API_Server.exe` directly:
+- ✓ Set database environment variables manually
+- ✓ `API_DB_*` variables take priority
+- ✓ `POSTGRES_*` variables are accepted as fallback
+- ✓ The API exits if required database configuration is missing or invalid
 
 **Variable Priority:**
 1. `API_DB_*` (highest priority)
 2. `POSTGRES_*` (fallback)
-3. Defaults: `localhost:5432, lab_notebook, postgres/postgres` (lowest)
+3. Setup Wizard saved config is used by desktop auto-start, not by arbitrary standalone shells
 
 ---
 

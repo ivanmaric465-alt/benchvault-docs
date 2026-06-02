@@ -128,7 +128,7 @@ Restore operations must be performed on the API server using server-side tooling
 - Click **Backup Now** in Cloud Backup dialog
 
 #### Checking Backup Status
-- **Project -> Current Project Info** shows last backup time
+- **Server -> Server Info** shows API connection details and backup status when available
 
 ### Backup Best Practices
 - Schedule regular backups (weekly minimum)

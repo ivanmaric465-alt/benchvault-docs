@@ -5,7 +5,7 @@ title: Installation Guide
 
 # BenchVault — Installation Guide
 
-Simple installation for Windows users. BenchVault is a multi-user lab data management system with an API-first desktop app.
+Simple installation for Windows users. BenchVault is a multi-user lab data management system with an API-first desktop app. The same Windows installer is used for single-PC/server installs and client workstations.
 
 For Linux source-run setup, see **docs/LINUX_INSTALLATION_GUIDE.md**.
 For VPS/cloud deployment, see **deploy/VPS_DEPLOY_INSTRUCTIONS.md**.
@@ -24,7 +24,7 @@ For VPS/cloud deployment, see **deploy/VPS_DEPLOY_INSTRUCTIONS.md**.
 
 ## Quick Start (Single PC)
 
-Everything runs on one computer. This is the simplest setup.
+Everything runs on one computer: PostgreSQL, the BenchVault API server, and the desktop app. This is the simplest setup.
 
 ### Step 1: Install PostgreSQL
 
@@ -37,7 +37,7 @@ Everything runs on one computer. This is the simplest setup.
 
 ### Step 2: Install BenchVault
 
-1. Download `BenchVault_Setup.exe`
+1. Download `BenchVault_Setup_4.1.0.exe`
 2. Right-click → Run as administrator
 3. Follow the installation wizard
 4. Click Finish — a desktop shortcut is created
@@ -54,11 +54,11 @@ Everything runs on one computer. This is the simplest setup.
    - Database name: `benchvault_lab` (default, or choose your own)
 4. Click **Test Connection** — should show ✅
 5. Click **Save & Continue** — the database is created automatically
-6. Click **Launch BenchVault**
+6. Click **Launch Local BenchVault**
 
 The API server starts automatically and the login dialog appears.
 
-> **What if I skip?** Click **Skip (Manual Setup)** to configure later via environment variables (`POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`).
+> **What if I skip?** Click **Skip Local DB Setup** only if you will configure the local API server manually via environment variables (`POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`). Client workstations should use **Connect to Existing Server** instead.
 
 ### Step 4: Login
 
@@ -72,12 +72,12 @@ The API server starts automatically and the login dialog appears.
 
 ## Server + Client PCs (lab/team)
 
-One computer runs PostgreSQL and the API server. Other computers connect to it.
+Use the same `BenchVault_Setup_4.1.0.exe` installer everywhere. One computer runs PostgreSQL and the API server. Other computers are client workstations that connect through the API URL and do **not** need PostgreSQL.
 
 ### On the Server PC
 
 1. Install PostgreSQL 16 (same as Quick Start Step 1)
-2. Install BenchVault (same as Quick Start Steps 3–5)
+2. Install BenchVault and run the Setup Wizard (same as Quick Start Steps 2–4)
    - The Setup Wizard will configure the database for you
    - Register the Master user
 3. Open Windows Firewall:
@@ -93,9 +93,11 @@ One computer runs PostgreSQL and the API server. Other computers connect to it.
 
 ### On Each Client PC
 
-1. Download and install `BenchVault_Setup.exe` (same installer)
+1. Download and install `BenchVault_Setup_4.1.0.exe` (same installer)
 2. Launch BenchVault — the Setup Wizard runs
-3. Since there's no local PostgreSQL, click **Skip (Manual Setup)** in the Database Configuration dialog
+3. Click **Connect to Existing Server**
+   - PostgreSQL is not required on client workstations
+   - The desktop app opens directly to the login dialog
 4. In the login dialog, replace `http://localhost:8000` with the server's URL:
    ```
    http://192.168.1.50:8000
@@ -119,7 +121,7 @@ To run the API server as a background service on Windows Server:
 2. Run: `nssm install BenchVaultAPI`
 3. Set Application path to `C:\Program Files\BenchVault\BenchVault_API_Server.exe`
 4. Set Startup directory to `C:\Program Files\BenchVault`
-5. On the **Environment** tab, add the `POSTGRES_*` variables from Step 3
+5. On the **Environment** tab, add `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD` matching the database configured in the Setup Wizard
 6. Click "Install service"
 7. Run: `nssm start BenchVaultAPI`
 
@@ -221,18 +223,19 @@ The AI Assistant is available to all users via **Tools → AI Assistant** (Ctrl+
 ### "Cannot connect to API server"
 
 - Check the server URL on the login screen is correct
-- If using `localhost`, ensure you set the `POSTGRES_DB` environment variable (Step 3)
-- Try `http://localhost:8000/api/status` in a web browser — you should see `{"status":"ok"}`
-- If nothing responds, the API server didn't start; check your environment variables
+- For client workstations, use the server's API URL, not a PostgreSQL host/port
+- Try `http://SERVER_IP:8000/api/status` in a web browser — you should see the BenchVault API status response
+- If nothing responds, make sure the API server is running on the host PC/VPS and port 8000 is allowed through the firewall
 
-### "POSTGRES_DB not set"
+### "PostgreSQL not found"
 
-BenchVault refuses to start without a database name. Set the `POSTGRES_DB` environment variable as shown in Step 3 above.
+PostgreSQL is only required on the server/single-PC host. If this is a client workstation, click **Connect to Existing Server** in the Setup Wizard and enter the API server URL on the login screen.
 
-### "Database does not exist"
+### "Database does not exist" or local API fails to start
 
-- The database name in `POSTGRES_DB` must match exactly
-- Create the database in pgAdmin: right-click Databases → Create → Database → enter name → Save
+- On the server/single-PC host, rerun the Setup Wizard and verify the saved database configuration
+- Confirm PostgreSQL is running and the database name matches the configured name
+- For source-run deployments, verify `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD` are set
 
 ### "Login Failed"
 
@@ -272,13 +275,13 @@ curl -X POST http://localhost:8000/api/v1/auth/register ^
 
 ## Post-Installation Checklist
 
-- [ ] PostgreSQL installed and running
-- [ ] Database created (`benchvault` or your name)
-- [ ] `POSTGRES_DB` (and other `POSTGRES_*`) environment variables set
-- [ ] BenchVault desktop installed
-- [ ] API server auto-starts on localhost login (or manually running on server)
+- [ ] PostgreSQL installed and running on the API/database host only
+- [ ] Database created by the Setup Wizard or server provisioning script
+- [ ] BenchVault installed with the single Windows installer
+- [ ] API server auto-starts on localhost login or runs as a service on the host
 - [ ] Master user registered
-- [ ] Firewall rules for port 8000 (if using client PCs)
+- [ ] Firewall rules for port 8000 configured if client PCs connect over the LAN
+- [ ] Client workstations use **Connect to Existing Server** and the API URL
 
 ### Optional
 - [ ] Email settings configured (User → Email Settings, Master only)
