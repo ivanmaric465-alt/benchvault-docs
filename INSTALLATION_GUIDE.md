@@ -37,7 +37,7 @@ Everything runs on one computer: PostgreSQL, the BenchVault API server, and the 
 
 ### Step 2: Install BenchVault
 
-1. Download `BenchVault_Setup_4.1.0.exe`
+1. Download `BenchVault_Setup_4.1.1.exe`
 2. Right-click → Run as administrator
 3. Follow the installation wizard
 4. Click Finish — a desktop shortcut is created
@@ -72,7 +72,7 @@ The API server starts automatically and the login dialog appears.
 
 ## Server + Client PCs (lab/team)
 
-Use the same `BenchVault_Setup_4.1.0.exe` installer everywhere. One computer runs PostgreSQL and the API server. Other computers are client workstations that connect through the API URL and do **not** need PostgreSQL.
+Use the same `BenchVault_Setup_4.1.1.exe` installer everywhere. One computer runs PostgreSQL and the API server. Other computers are client workstations that connect through the API URL and do **not** need PostgreSQL.
 
 ### On the Server PC
 
@@ -80,10 +80,13 @@ Use the same `BenchVault_Setup_4.1.0.exe` installer everywhere. One computer run
 2. Install BenchVault and run the Setup Wizard (same as Quick Start Steps 2–4)
    - The Setup Wizard will configure the database for you
    - Register the Master user
-3. Open Windows Firewall:
+3. Open Windows Firewall for API access from other devices:
    ```cmd
    netsh advfirewall firewall add rule name="BenchVault API" dir=in action=allow protocol=TCP localport=8000
    ```
+   - Port `8000` is used by desktop, mobile, standalone/server, and VPS API deployments.
+   - By default the desktop auto-starts the API in local/tunnel mode (`127.0.0.1`). A Master user can enable **User -> Allow Direct LAN Access** to rebind the same API for direct LAN clients (`0.0.0.0`).
+   - If you use ngrok, you can leave the API in local/tunnel mode and point ngrok at `http://localhost:8000`.
 4. Find your server IP:
    ```cmd
    ipconfig
@@ -93,12 +96,16 @@ Use the same `BenchVault_Setup_4.1.0.exe` installer everywhere. One computer run
 
 ### On Each Client PC
 
-1. Download and install `BenchVault_Setup_4.1.0.exe` (same installer)
+1. Download and install `BenchVault_Setup_4.1.1.exe` (same installer)
 2. Launch BenchVault — the Setup Wizard runs
 3. Click **Connect to Existing Server**
    - PostgreSQL is not required on client workstations
    - The desktop app opens directly to the login dialog
-4. In the login dialog, replace `http://localhost:8000` with the server's URL:
+4. In the login dialog, replace `http://localhost:8000` with the server's API URL:
+   ```
+   http://192.168.1.50:8000
+   ```
+   If the server PC is using **Allow Direct LAN Access** from the desktop User menu, use the URL shown by the app, typically:
    ```
    http://192.168.1.50:8000
    ```
@@ -280,7 +287,7 @@ curl -X POST http://localhost:8000/api/v1/auth/register ^
 - [ ] BenchVault installed with the single Windows installer
 - [ ] API server auto-starts on localhost login or runs as a service on the host
 - [ ] Master user registered
-- [ ] Firewall rules for port 8000 configured if client PCs connect over the LAN
+- [ ] Firewall rule for port 8000 configured if clients connect over the LAN
 - [ ] Client workstations use **Connect to Existing Server** and the API URL
 
 ### Optional

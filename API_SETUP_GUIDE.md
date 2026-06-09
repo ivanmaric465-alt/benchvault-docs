@@ -3,7 +3,7 @@ layout: default
 title: API Setup Guide
 ---
 
-# BenchVault v4.1.0 - Mobile App & API Setup Guide
+# BenchVault v4.1.1 - Mobile App & API Setup Guide
 
 Complete guide for setting up the mobile app and API server.
 
@@ -27,13 +27,15 @@ BenchVault includes a Flutter mobile app that connects to the same BenchVault AP
 
 1. On the server/single-PC host, install PostgreSQL and launch BenchVault
 2. Let the Setup Wizard configure the local API database
-3. Log in once with the server URL set to `http://localhost:8000`; the local API server starts automatically
-4. Find the host's LAN address (for example, `192.168.1.100`)
+3. Log in once with the desktop URL set to `http://localhost:8000`; the local desktop API starts automatically in local-only mode
+4. Choose how the phone reaches the API:
+   - **Same Wi-Fi/LAN directly**: as a Master user, open **User -> Allow Direct LAN Access**. BenchVault rebinds the same API server for LAN access and shows a URL like `http://192.168.1.100:8000`.
+   - **ngrok/tunnel**: leave the API in local/tunnel mode and run ngrok against `http://localhost:8000`; enter the ngrok HTTPS URL in the mobile app.
 5. On the mobile app login screen, expand **API Server Settings**
-6. Enter the API URL, for example `http://192.168.1.100:8000`
+6. Enter the direct LAN URL or tunnel URL
 7. Login with your BenchVault credentials
 
-**Done!** Mobile and desktop clients use the same API URL. PostgreSQL is not installed on client devices.
+**Done!** Desktop and mobile use the same API server and database on port `8000`; PostgreSQL is not installed on client devices.
 
 ---
 
@@ -318,7 +320,7 @@ Visit `http://your-server:8000/docs` for:
    ```
 3. Or use different port:
    ```cmd
-   set API_PORT=8001
+   set API_PORT=8000
    python api_server.py
    ```
 
@@ -411,7 +413,9 @@ python api_server.py > api.log 2>&1
 When logging in with `http://localhost:8000` on the server/single-PC host:
 - ✓ Reads the Setup Wizard's saved database configuration
 - ✓ Sets `API_DB_*` variables for the local API subprocess
-- ✓ Manages the local API process lifecycle
+- ✓ Binds the desktop login API to `127.0.0.1:8000` by default
+- ✓ ngrok/tunnels can forward to the default local API without changing bind mode
+- ✓ Master users can rebind the same local API to `0.0.0.0:8000` for direct LAN access
 - ✗ Client workstations do not need local database environment variables
 
 ### Standalone API Server
@@ -439,5 +443,5 @@ For end users, see **USER_GUIDE.md**.
 
 ---
 
-**Last Updated:** 2026-06-02
-**Version:** 4.1.0
+**Last Updated:** 2026-06-09
+**Version:** 4.1.1

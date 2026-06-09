@@ -22,6 +22,23 @@ Daily usage guide for all BenchVault users.
 5. First time? Click the **Register** tab to create your account
 6. Dashboard opens
 
+### Mobile, LAN, and Tunnel Access from the Desktop Host
+If you run the API from the desktop app and want phones or other devices to connect, use one of these paths:
+
+#### Same Wi-Fi/LAN direct connection
+1. Login as a Master user on the server/single-PC host
+2. Open **User -> Allow Direct LAN Access**
+3. BenchVault rebinds the same local API from local/tunnel mode to direct LAN mode
+4. Use the URL shown by BenchVault in the mobile app, typically `http://YOUR_PC_IP:8000`
+5. Allow Windows Firewall access to port `8000` if prompted
+
+#### ngrok or another tunnel
+1. Leave BenchVault in local/tunnel mode (`http://localhost:8000`)
+2. Start your tunnel against `http://localhost:8000`
+3. Enter the public tunnel URL in the mobile app
+
+Desktop, direct LAN clients, and tunnel clients all use the same API server and database on port `8000`.
+
 ### Dashboard Overview
 - **Recent Experiments**: Last 5 experiments with quick access
 - **Inventory Alerts**: Low stock items (red = critical, orange = low)
