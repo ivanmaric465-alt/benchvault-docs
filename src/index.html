@@ -10,6 +10,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="site.css">
+<!-- Without JS, the IntersectionObserver below never runs, so the seven
+     .reveal sections (site.css) would stay at opacity: 0 forever and the
+     page would render as hero-only. Restore them for no-JS visitors. -->
+<noscript><style>.reveal{opacity:1;transform:none}</style></noscript>
 </head>
 <body class="landing">
 <div class="spectrum-rule"></div>
@@ -343,10 +347,13 @@ docker compose up -d</code></pre>
 const nav = document.getElementById('nav');
 addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 40));
 
-// Reveal sections as they enter the viewport.
+// Reveal sections as they enter the viewport. threshold: 0 fires as soon as
+// any part of a section intersects — needed because .modules alone is
+// ~3878px tall, so a nonzero ratio threshold (e.g. 0.12) could exceed what
+// any real viewport height can ever deliver and never fire.
 const io = new IntersectionObserver((entries) => {
   entries.forEach((e) => e.isIntersecting && e.target.classList.add('in'));
-}, { threshold: 0.12 });
+}, { threshold: 0 });
 document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
 
 // Screenshot lightbox.

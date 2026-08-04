@@ -360,7 +360,10 @@ pre {
   margin: 0 auto;
   padding: 2rem 1.5rem 3rem;
   border-top: 1px solid var(--line);
-  color: var(--ink3);
+  /* --ink3 (#7C857F) on --paper measures 3.42:1, under WCAG AA's 4.5:1, on
+     all five guide pages. --ink2 (#46534F) is 7.23:1 — reuse the existing
+     token rather than add a new value. */
+  color: var(--ink2);
   font-size: 0.85rem;
 }
 
@@ -511,6 +514,10 @@ pre {
 .landing-nav.scrolled .landing-nav-links a:not(.btn) { color: var(--ink2); }
 .landing-nav.scrolled .landing-nav-links a:not(.btn):hover { color: var(--brand-dark); }
 
+/* Both are inert above 820px, where the burger is never shown and the full
+   nav is always visible — display: none is correct here (nothing to focus).
+   The <=820px override below is what makes the checkbox keyboard-reachable
+   once the burger becomes the only way to open the menu. */
 .landing-nav-check,
 .landing-nav-burger { display: none; }
 
@@ -937,7 +944,13 @@ button.card { cursor: zoom-in; }
 }
 
 .callout-warning p { color: var(--ink); }
-.callout-warning strong { color: var(--amber); }
+/* --amber (#B5760F) on this callout's own tinted background (#efe9da,
+   i.e. --amber at 8% over --paper) measures 3.12:1 — under WCAG AA's
+   4.5:1 for this, the single most consequential sentence on the page.
+   #7A500A is --amber's hue/saturation at lower lightness; measured
+   5.82:1 against #efe9da (6.34:1 against plain --paper). Not a design
+   token — kept local to this rule and documented here per review. */
+.callout-warning strong { color: #7A500A; }
 
 .install-note {
   max-width: 62ch;
@@ -1172,6 +1185,18 @@ button.card { cursor: zoom-in; }
 }
 
 @media (max-width: 820px) {
+  /* Visually hidden, not display: none, so the checkbox stays in the
+     accessibility tree and reachable by Tab now that the burger label is
+     the only visible way to open the menu at this width. */
+  .landing-nav-check {
+    display: block;
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
   .landing-nav-links {
     position: absolute;
     top: 100%;
@@ -1184,12 +1209,22 @@ button.card { cursor: zoom-in; }
     border-top: 1px solid rgb(255 255 255 / 0.1);
     max-height: 0;
     overflow: hidden;
-    transition: max-height 0.25s ease;
+    /* overflow: hidden alone clips the links visually but leaves them
+       tabbable — visibility: hidden is what actually removes them from
+       the tab order while the menu is collapsed. step-end/step-start defer
+       the visibility flip to each end of the max-height animation, so the
+       open/close motion still reads the same as before. */
+    visibility: hidden;
+    transition: max-height 0.25s ease, visibility 0.25s step-end;
   }
 
   .landing-nav.scrolled .landing-nav-links { background: var(--sidebar-top); }
 
-  .landing-nav-check:checked ~ .landing-nav-links { max-height: 22rem; }
+  .landing-nav-check:checked ~ .landing-nav-links {
+    max-height: 22rem;
+    visibility: visible;
+    transition: max-height 0.25s ease, visibility 0.25s step-start;
+  }
 
   .landing-nav-links a:not(.btn) {
     padding: 0.9rem 1.5rem;
@@ -1211,6 +1246,20 @@ button.card { cursor: zoom-in; }
     width: 2.25rem;
     height: 2.25rem;
     cursor: pointer;
+  }
+
+  /* The checkbox and label are siblings, not nested, so :focus-within on
+     the label can never trigger from the input's focus — this adjacent-
+     sibling + :focus-visible pairing is the equivalent that actually works
+     with this markup, giving keyboard users a visible target for Tab. */
+  .landing-nav-check:focus-visible + .landing-nav-burger {
+    outline: 2px solid #fff;
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  .landing-nav.scrolled .landing-nav-check:focus-visible + .landing-nav-burger {
+    outline-color: var(--brand-dark);
   }
 
   .landing-nav-burger span {

@@ -120,12 +120,15 @@ def main(argv: list[str] | None = None) -> int:
     pages = [build.REPO / "index.html"] + [
         build.REPO / f"{slug}.html" for slug, _ in build.DOCS
     ]
-    missing = [p.name for p in pages if not p.exists()]
-    if missing:
-        raise SystemExit(f"Not built — missing {', '.join(missing)}. Run build.py.")
-
     redirect_pages = [build.REPO / f"{slug}.html" for slug in build.REDIRECTS]
     all_pages = pages + redirect_pages
+
+    # Cover all 9 pages (index + 5 guides + 3 redirect stubs), not just the
+    # first 6 — otherwise a missing redirect stub reaches check_links()
+    # below and raises a raw FileNotFoundError instead of this message.
+    missing = [p.name for p in all_pages if not p.exists()]
+    if missing:
+        raise SystemExit(f"Not built — missing {', '.join(missing)}. Run build.py.")
 
     problems = (
         check_links(all_pages)
