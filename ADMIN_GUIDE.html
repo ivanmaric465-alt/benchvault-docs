@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Administrator Guide — BenchVault v5.0.4</title>
+<meta name="description" content="Administrator Guide for BenchVault, the self-hosted electronic lab notebook.">
+<link rel="icon" type="image/png" href="images/app_icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<div class="spectrum-rule"></div>
+<header class="topbar">
+  <a class="brand" href="index.html">
+    <img src="images/app_icon.png" alt="" width="28" height="28">
+    <span>BenchVault</span>
+  </a>
+  <nav class="topbar-links">
+    <a href="index.html">Home</a>
+    <a href="INSTALL.html">Install</a>
+    <a href="USER_GUIDE.html">Guides</a>
+    <a href="https://github.com/ivanmaric465-alt/benchvault">GitHub</a>
+  </nav>
+</header>
+
+<main class="doc-shell">
+  <details class="doc-nav-mobile">
+    <summary>All guides</summary>
+    <nav class="doc-nav"><a href="INSTALL.html">Install Guide</a>
+<a href="USER_GUIDE.html">User Guide</a>
+<a href="ADMIN_GUIDE.html" aria-current="page">Administrator Guide</a>
+<a href="DOCKER_DEPLOY_GUIDE.html">Deployment Guide</a>
+<a href="CHANGELOG.html">Changelog</a></nav>
+  </details>
+  <nav class="doc-nav doc-nav-desktop" aria-label="Documentation"><a href="INSTALL.html">Install Guide</a>
+<a href="USER_GUIDE.html">User Guide</a>
+<a href="ADMIN_GUIDE.html" aria-current="page">Administrator Guide</a>
+<a href="DOCKER_DEPLOY_GUIDE.html">Deployment Guide</a>
+<a href="CHANGELOG.html">Changelog</a></nav>
+  <article class="doc-body">
+    <p class="doc-eyebrow">BenchVault v5.0.4</p>
+    <h1>Administrator Guide</h1>
+    <p>For <strong>Master</strong> users: managing accounts, settings, and the audit trail from
+inside BenchVault.</p>
+<p>Everything here happens in your browser. For anything needing a terminal —
+backups, HTTPS, upgrades — see the <a href="DOCKER_DEPLOY_GUIDE.html">Deployment Guide</a>.
+For day-to-day lab work, see the <a href="USER_GUIDE.html">User Guide</a>.</p>
+<hr />
+<h2 id="what-master-means">What Master means</h2>
+<p>BenchVault has two roles.</p>
+<p><strong>Regular</strong> users work with their own records. They see the lab's shared data
+but can only edit and delete what they created.</p>
+<p><strong>Master</strong> users can edit and delete <em>any</em> record, and see admin-only screens
+that Regular users have no menu item for:</p>
+<ul>
+<li><strong>Audit Log</strong> — the full change history</li>
+<li><strong>Analysis Categories</strong> — the managed vocabulary for analysis types</li>
+<li>Most of <strong>Account</strong> — Preferences, Email, Backup, Server, AI, and Users</li>
+</ul>
+<p>The first account created on a new deployment becomes Master automatically.
+That account is also <strong>protected</strong>: it cannot be deleted, so a deployment can
+never end up with nobody in charge.</p>
+<p>Keep the number of Masters small. Every Master can delete anyone's data.</p>
+<hr />
+<h2 id="users">Users</h2>
+<p><strong>Account → Users</strong></p>
+<p><img alt="Managing users" src="images/admin-users.png" /></p>
+<h3 id="creating-an-account">Creating an account</h3>
+<p>Click <strong>Create user</strong> and fill in <strong>Username</strong>, <strong>Full name</strong>, <strong>Email</strong>, and a
+<strong>Temporary password</strong> that you choose. Leave <strong>Must change password at first
+login</strong> ticked so they replace it with something only they know — that is the
+point of the field being called temporary.</p>
+<p>Then give them the username and that temporary password directly. BenchVault
+does not email invitations.</p>
+<blockquote>
+<p><strong>New accounts are Regular.</strong> There is no role picker on the create form. To
+make someone a Master, create the account first, then change their role from
+the user list — BenchVault asks you to confirm (<em>Change "username" to
+Master?</em>) because it is a significant grant.</p>
+</blockquote>
+<h3 id="deactivate-dont-delete">Deactivate, don't delete</h3>
+<p>When someone leaves the lab, <strong>Deactivate</strong> rather than delete:</p>
+<ul>
+<li><strong>Deactivate</strong> — they can no longer sign in, but everything they created stays
+  intact and correctly attributed. Reversible with <strong>Reactivate</strong>.</li>
+<li><strong>Delete</strong> — removes the account outright. Keep it for genuine mistakes, such
+  as an account created twice.</li>
+</ul>
+<p>Deactivation is almost always what you want. A departed student's experiments
+should keep their name on them.</p>
+<h3 id="resetting-a-password">Resetting a password</h3>
+<p><strong>Reset password</strong> lets you set a <strong>New password</strong> for someone locked out, again
+with <strong>Must change password at first login</strong> available.</p>
+<p>If <em>you</em> are locked out and no other Master can help, recovery is a terminal
+operation — see the <a href="INSTALL.html#8-when-something-goes-wrong">Install Guide</a>.</p>
+<hr />
+<h2 id="feature-toggles">Feature toggles</h2>
+<p><strong>Account → Preferences</strong></p>
+<p>These change BenchVault for <strong>everyone</strong>, not just you.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Enable Inventory Module</strong></td>
+<td>Off hides Inventory from the sidebar for all users. Existing data is kept, just not shown.</td>
+</tr>
+<tr>
+<td><strong>Show Recent Activities</strong></td>
+<td>Off hides the recent-activity feed and the Activity page.</td>
+</tr>
+<tr>
+<td><strong>Auto-deduct inventory when creating experiments</strong></td>
+<td>On means adding a reactant subtracts that quantity from stock automatically. Off means stock only ever changes by hand.</td>
+</tr>
+</tbody>
+</table>
+<p>If someone reports a missing menu item, look here first — a toggle explains it
+far more often than a bug does.</p>
+<p>Auto-deduct deserves thought before switching it off: with it on, inventory
+tracks real consumption without anyone remembering to update it. With it off,
+stock levels drift out of date quickly.</p>
+<hr />
+<h2 id="analysis-categories">Analysis Categories</h2>
+<p><strong>Analysis Categories</strong> (sidebar, Master only)</p>
+<p>The list of analysis types users choose from when adding an analysis to a
+sample — NMR, HPLC, MS, and whatever else your lab runs.</p>
+<p>Curate it. A short, agreed list keeps records searchable; free text produces
+"NMR", "nmr", and "1H NMR" as three unrelated things.</p>
+<hr />
+<h2 id="audit-log">Audit Log</h2>
+<p><strong>Audit Log</strong> (sidebar, Master only)</p>
+<p><img alt="The audit log" src="images/admin-audit-log.png" /></p>
+<p>A permanent record of who changed what. It captures creates and updates across
+experiments, samples, analyses, and equipment with <strong>field-level detail</strong> — an
+update entry shows each changed field's old and new value, a create entry shows
+a snapshot. Saves that change nothing are not recorded.</p>
+<p>Filter by user, entity type, action type, and date range, then search the
+results as text. Expand a row for detail, or follow the entity link to the
+record itself.</p>
+<p>This is the screen for "who deleted that sample?" and for demonstrating data
+integrity to an auditor. It is Master-only because it exposes everyone's
+activity.</p>
+<blockquote>
+<p><strong>Audit Log vs Activity Log:</strong> the Audit Log is the formal, Master-only
+compliance trail. The <strong>Activity</strong> page is a friendly recent-changes feed all
+users see, governed by the <em>Show Recent Activities</em> toggle. Different things.</p>
+</blockquote>
+<hr />
+<h2 id="email">Email</h2>
+<p><strong>Account → Email</strong></p>
+<p>Configure SMTP — <strong>SMTP server</strong>, <strong>Port</strong>, <strong>Sender email</strong>, <strong>Password</strong>, and
+<strong>Use TLS</strong> — to let BenchVault send:</p>
+<ul>
+<li>Equipment reservation confirmations and reminders</li>
+<li>Low-stock inventory alerts</li>
+<li>Password-reset codes</li>
+<li>An optional <strong>weekly summary email</strong></li>
+</ul>
+<p>Without SMTP, BenchVault works normally but sends nothing, and self-service
+password reset cannot work — you will be resetting passwords by hand under
+<strong>Users</strong>.</p>
+<p>Credentials are encrypted before storage, using a key kept in the <code>data</code>
+volume. That is one more reason to back that volume up — see the
+<a href="DOCKER_DEPLOY_GUIDE.html">Deployment Guide</a>.</p>
+<hr />
+<h2 id="ai-assistant">AI Assistant</h2>
+<p><strong>Account → AI</strong></p>
+<p>The assistant stays off until you supply your own provider credentials. Pick a
+<strong>Provider</strong>, enter an <strong>Anthropic API key</strong> or <strong>OpenRouter API key</strong>, choose a
+<strong>Default model</strong>, and optionally set a <strong>Monthly budget (USD)</strong> to cap spend.</p>
+<p>Two things to be deliberate about: usage bills to <em>your</em> key, and enabling the
+assistant means lab data is sent to that provider for processing. Confirm that
+is acceptable under your institution's data policy before switching it on.</p>
+<hr />
+<h2 id="cloud-backup">Cloud Backup</h2>
+<p><strong>Account → Backup</strong></p>
+<p>Sends backups to Koofr, Nextcloud, pCloud, Box, or any WebDAV server. Configure
+the destination and credentials here.</p>
+<p><strong>This is not a complete backup strategy on its own.</strong> Read the backup section
+of the <a href="DOCKER_DEPLOY_GUIDE.html">Deployment Guide</a>, which covers what actually
+needs backing up — the database <em>and</em> the <code>data</code> volume holding attachments and
+encryption keys — and, more importantly, how to practise restoring, so you learn
+your backups work before you need them rather than after.</p>
+<hr />
+<h2 id="server">Server</h2>
+<p><strong>Account → Server</strong></p>
+<p>Read-only status: version, database size, and record counts. Useful for a quick
+health check, or when reporting a problem.</p>
+<hr />
+<h2 id="related">Related</h2>
+<ul>
+<li><a href="USER_GUIDE.html">User Guide</a> — day-to-day use of every module</li>
+<li><a href="INSTALL.html">Install Guide</a> — first-time setup and recovery</li>
+<li><a href="DOCKER_DEPLOY_GUIDE.html">Deployment Guide</a> — backups, HTTPS, upgrades</li>
+</ul>
+  </article>
+</main>
+
+<footer class="doc-footer">
+  <span>BenchVault v5.0.4 — AGPL-3.0-only</span>
+  <a href="https://github.com/ivanmaric465-alt/benchvault">github.com/ivanmaric465-alt/benchvault</a>
+</footer>
+</body>
+</html>

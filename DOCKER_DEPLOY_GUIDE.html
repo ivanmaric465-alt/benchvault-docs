@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deployment Guide — BenchVault v5.0.4</title>
+<meta name="description" content="Deployment Guide for BenchVault, the self-hosted electronic lab notebook.">
+<link rel="icon" type="image/png" href="images/app_icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<div class="spectrum-rule"></div>
+<header class="topbar">
+  <a class="brand" href="index.html">
+    <img src="images/app_icon.png" alt="" width="28" height="28">
+    <span>BenchVault</span>
+  </a>
+  <nav class="topbar-links">
+    <a href="index.html">Home</a>
+    <a href="INSTALL.html">Install</a>
+    <a href="USER_GUIDE.html">Guides</a>
+    <a href="https://github.com/ivanmaric465-alt/benchvault">GitHub</a>
+  </nav>
+</header>
+
+<main class="doc-shell">
+  <details class="doc-nav-mobile">
+    <summary>All guides</summary>
+    <nav class="doc-nav"><a href="INSTALL.html">Install Guide</a>
+<a href="USER_GUIDE.html">User Guide</a>
+<a href="ADMIN_GUIDE.html">Administrator Guide</a>
+<a href="DOCKER_DEPLOY_GUIDE.html" aria-current="page">Deployment Guide</a>
+<a href="CHANGELOG.html">Changelog</a></nav>
+  </details>
+  <nav class="doc-nav doc-nav-desktop" aria-label="Documentation"><a href="INSTALL.html">Install Guide</a>
+<a href="USER_GUIDE.html">User Guide</a>
+<a href="ADMIN_GUIDE.html">Administrator Guide</a>
+<a href="DOCKER_DEPLOY_GUIDE.html" aria-current="page">Deployment Guide</a>
+<a href="CHANGELOG.html">Changelog</a></nav>
+  <article class="doc-body">
+    <p class="doc-eyebrow">BenchVault v5.0.4</p>
+    <h1>Deployment Guide</h1>
+    <p>Operating an existing BenchVault deployment: configuration, HTTPS, backups,
+upgrades, and diagnosis.</p>
+<blockquote>
+<p><strong>Installing for the first time?</strong> Start with the
+<a href="INSTALL.html">Install Guide</a>. This document assumes BenchVault is already
+running and you now need to run it <em>well</em>.</p>
+<p><strong>Looking for the in-app admin screens</strong> — users, roles, audit log, the Cloud
+Backup panel? Those live in the <a href="ADMIN_GUIDE.html">Administrator Guide</a>. This
+guide covers only what you do from a terminal.</p>
+</blockquote>
+<p>BenchVault ships as one Docker Compose stack: <strong>db</strong> (PostgreSQL 16), <strong>api</strong>
+(FastAPI, migrates on boot), and <strong>caddy</strong> (serves the React SPA and
+reverse-proxies <code>/api</code>). The same command runs it identically on a Linux VPS
+and on Windows Docker Desktop.</p>
+<hr />
+<h2 id="configuration-env">Configuration (<code>.env</code>)</h2>
+<blockquote>
+<p><strong><code>.env</code> is authoritative.</strong> The <code>db</code> and <code>api</code> containers read it directly
+via compose <code>env_file</code>, <em>not</em> via variable interpolation. Environment
+variables exported in your host shell — including legacy desktop-era
+<code>POSTGRES_DB</code> or <code>POSTGRES_PASSWORD</code> — therefore cannot override it. What you
+put in this file is exactly what the containers get.</p>
+<p>The exception is values compose interpolates rather than passes through
+<code>env_file</code>: <code>HTTP_PORT</code>, <code>HTTPS_PORT</code>, <code>DOMAIN</code>, <code>BENCHVAULT_COOKIE_SECURE</code>,
+and <code>BENCHVAULT_ENABLE_API_DOCS</code> still follow normal shell precedence, so
+<code>HTTP_PORT=8080 docker compose up -d</code> works while
+<code>POSTGRES_PASSWORD=x docker compose up -d</code> silently does nothing.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>POSTGRES_PASSWORD</code></td>
+<td><strong>Required.</strong> Database password. Never typed by users.</td>
+</tr>
+<tr>
+<td><code>POSTGRES_DB</code> / <code>POSTGRES_USER</code></td>
+<td>Database name and user. <strong>Set both explicitly</strong> — the postgres image defaults them to <code>postgres</code>, and the API needs a name.</td>
+</tr>
+<tr>
+<td><code>DOMAIN</code></td>
+<td>Blank = LAN plain-HTTP on <code>:80</code>. A real domain = Caddy auto-HTTPS on <code>:443</code>.</td>
+</tr>
+<tr>
+<td><code>BENCHVAULT_COOKIE_SECURE</code></td>
+<td><code>false</code> for LAN HTTP, <code>true</code> for HTTPS. <strong>Must agree with <code>DOMAIN</code></strong> or login breaks silently.</td>
+</tr>
+<tr>
+<td><code>HTTP_PORT</code> / <code>HTTPS_PORT</code></td>
+<td>Host ports to publish. LAN use only — see TLS below.</td>
+</tr>
+<tr>
+<td><code>BENCHVAULT_ENABLE_API_DOCS</code></td>
+<td><code>0</code> hides the <code>/docs</code> API explorer. Consider it for public deployments.</td>
+</tr>
+<tr>
+<td><code>JWT_SECRET_KEY</code>, <code>BenchVault_ENCRYPTION_KEY</code></td>
+<td>Optional. Auto-generated and persisted under <code>/data/config</code> if unset.</td>
+</tr>
+<tr>
+<td><code>BENCHVAULT_UPDATE_CHECK_TOKEN</code></td>
+<td>Optional. Read token (fine-grained PAT) for the automatic update check when the repository is <strong>private</strong>; unset for public repos.</td>
+</tr>
+<tr>
+<td><code>BENCHVAULT_AUTO_BACKUP_INTERVAL_HOURS</code></td>
+<td>Optional. How often the automatic cloud backup runs when enabled in the app's Cloud Backup panel (default <code>24</code>).</td>
+</tr>
+</tbody>
+</table>
+<p>After changing <code>POSTGRES_*</code>, the db container needs <code>docker compose down</code> then
+<code>up -d</code> — a plain <code>up -d</code> will not apply them.</p>
+<hr />
+<h2 id="lan-versus-public-https">LAN versus public HTTPS</h2>
+<p><strong>LAN / plain HTTP</strong></p>
+<pre><code>DOMAIN=
+BENCHVAULT_COOKIE_SECURE=false
+</code></pre>
+<p>Caddy serves HTTP on port 80. Reachable at <code>http://&lt;host-ip&gt;</code>. Remap with
+<code>HTTP_PORT</code> if 80 is taken.</p>
+<p><strong>Public with a domain</strong></p>
+<pre><code>DOMAIN=benchvault.example.com
+BENCHVAULT_COOKIE_SECURE=true
+</code></pre>
+<p>Point the domain's DNS at the host; Caddy obtains and renews a certificate
+automatically. Ports 80 and 443 must be reachable from the internet.</p>
+<blockquote>
+<p><strong>Do not remap <code>HTTP_PORT</code>/<code>HTTPS_PORT</code> in the public case.</strong> Automatic
+certificate issuance needs the host's real ports 80 and 443 published for the
+ACME challenge.</p>
+</blockquote>
+<p>The two settings must always agree. A <code>Secure</code> cookie over plain HTTP is
+discarded by the browser, so sign-in appears to do nothing at all — no error,
+no clue. It is the single most common broken deployment.</p>
+<hr />
+<h2 id="data-and-persistence">Data and persistence</h2>
+<p>Named volumes survive <code>stop</code>, <code>up</code>, and <code>pull</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Volume</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>data</code> → <code>/data</code> in api</td>
+<td>Attachments (<code>experiment_files/</code>, <code>analysis_files/</code>), <code>backups/</code>, logs, and <code>config/</code> (auto-generated <code>jwt_secret.key</code>, <code>encryption.key</code>)</td>
+</tr>
+<tr>
+<td><code>db-data</code></td>
+<td>PostgreSQL storage</td>
+</tr>
+<tr>
+<td><code>caddy-data</code> / <code>caddy-config</code></td>
+<td>Certificates and Caddy state</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Back up the <code>data</code> volume, not just the database.</strong> Losing <code>/data/config</code>
+without having set an explicit <code>BenchVault_ENCRYPTION_KEY</code> makes previously
+stored SMTP and AI credentials permanently undecryptable — the database alone
+will not bring them back.</p>
+<hr />
+<h2 id="backups">Backups</h2>
+<p>Both halves matter: the database holds your records, the <code>data</code> volume holds
+attachments and encryption keys.</p>
+<pre><code class="language-bash"># Database
+docker compose exec -T db sh -c 'pg_dump -U &quot;$POSTGRES_USER&quot; &quot;$POSTGRES_DB&quot;' \
+  | gzip &gt; benchvault-db-$(date +%F).sql.gz
+
+# Attachments + config keys
+docker compose exec -T api tar czf - -C /data . &gt; benchvault-data-$(date +%F).tgz
+</code></pre>
+<p>Automate it with cron (Linux) or Task Scheduler (Windows), and <strong>copy the
+output somewhere else</strong> — a backup on the same disk as the original is not a
+backup.</p>
+<p><strong>Scripted backups.</strong> <code>scripts/backup.sh</code> is Docker-native: it dumps the
+database and the data volume through the running containers, writes the status
+files the Server section reads, and prunes old backups (30-day retention).
+With <code>--cloud</code> it also uploads both artifacts to the cloud provider configured
+in the app (Settings → Cloud Backup) — the cron-able equivalent of the in-app
+"Back up now" button, so backups live off-box even if the server dies.</p>
+<pre><code class="language-bash">bash scripts/backup.sh                     # on-box only
+bash scripts/backup.sh --cloud             # on-box + upload to the app's cloud provider
+# cron (daily 03:00, on-box + cloud):
+# 0 3 * * * cd /root/benchvault &amp;&amp; bash scripts/backup.sh --cloud &gt;&gt; /var/log/benchvault-backup.log 2&gt;&amp;1
+</code></pre>
+<h3 id="restoring">Restoring</h3>
+<pre><code class="language-bash">bash scripts/restore.sh latest              # newest local backup
+bash scripts/restore.sh latest --from-cloud # download from the configured cloud provider
+bash scripts/restore.sh BenchVault_Backup_benchvault_20260804_120000.zip --yes
+</code></pre>
+<p><code>restore.sh</code> stops the api service, takes a safety backup first (unless
+<code>--skip-pre-restore-backup</code>), restores the database and/or data volume
+(<code>.zip</code> full backups, <code>.sql.gz</code>/<code>.sql</code> database dumps, <code>.tgz</code> data volumes),
+then starts the api again (or <code>--keep-api-stopped</code>). It asks for typed
+confirmation unless <code>--yes</code>.</p>
+<h3 id="practise-it-before-you-need-it">Practise it before you need it</h3>
+<p>An untested backup is a guess. <code>scripts/restore-test.sh</code> automates the drill:
+it restores the newest backup into a throwaway stack on ports 8099/8443,
+verifies the API comes up healthy with your data, then tears the drill down
+(keep it with <code>--keep</code> to inspect the restored data in a browser first).</p>
+<pre><code class="language-bash">bash scripts/restore-test.sh
+</code></pre>
+<p>Do this when you set backups up, and again whenever you change how they run.</p>
+<hr />
+<h2 id="upgrading">Upgrading</h2>
+<pre><code class="language-bash">docker compose pull &amp;&amp; docker compose up -d
+</code></pre>
+<p>Migrations apply automatically as the new api container boots. Take a backup
+first anyway — schema changes are the one upgrade you cannot undo by pulling
+the previous image.</p>
+<p><strong>You will usually know an update exists before running that command.</strong> The
+web app checks GitHub for newer releases automatically (every install, no
+cron or manual setup) and shows a dismissible banner in the top of the app
+when a newer version is out. The check is cached for a few hours and skipped
+silently when the server cannot reach GitHub. If the repository is
+<strong>private</strong>, set <code>BENCHVAULT_UPDATE_CHECK_TOKEN</code> in <code>.env</code> (a fine-grained
+PAT with read-only Contents or Metadata access to the repo) — GitHub rejects
+unauthenticated release lookups for private repositories.</p>
+<hr />
+<h2 id="logs-and-health">Logs and health</h2>
+<pre><code class="language-bash">docker compose ps            # all three services and their health
+docker compose logs -f api   # application log, follow
+docker compose logs db       # database, including startup problems
+curl http://localhost/api/status
+</code></pre>
+<p>Both <code>db</code> and <code>api</code> report a health status in <code>docker compose ps</code>. <code>caddy</code> does
+not — if the site is unreachable but api is healthy, check <code>docker compose logs
+caddy</code> for certificate errors.</p>
+<p>A clean api boot ends with gunicorn workers starting and no traceback. The
+entrypoint waits for the database, runs <code>scripts/migrate.py</code> (baseline schema
+plus <code>alembic upgrade head</code>), then starts gunicorn — so every boot converges to
+head and schema drift cannot accumulate on a supported install.</p>
+<hr />
+<h2 id="related">Related</h2>
+<ul>
+<li><a href="INSTALL.html">Install Guide</a> — first-time setup</li>
+<li><a href="ADMIN_GUIDE.html">Administrator Guide</a> — in-app user management, audit log, and the Cloud Backup screen</li>
+<li><a href="CHANGELOG.html">Changelog</a> — what changed in each release</li>
+</ul>
+  </article>
+</main>
+
+<footer class="doc-footer">
+  <span>BenchVault v5.0.4 — AGPL-3.0-only</span>
+  <a href="https://github.com/ivanmaric465-alt/benchvault">github.com/ivanmaric465-alt/benchvault</a>
+</footer>
+</body>
+</html>

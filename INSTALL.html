@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Install Guide — BenchVault v5.0.4</title>
+<meta name="description" content="Install Guide for BenchVault, the self-hosted electronic lab notebook.">
+<link rel="icon" type="image/png" href="images/app_icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<div class="spectrum-rule"></div>
+<header class="topbar">
+  <a class="brand" href="index.html">
+    <img src="images/app_icon.png" alt="" width="28" height="28">
+    <span>BenchVault</span>
+  </a>
+  <nav class="topbar-links">
+    <a href="index.html">Home</a>
+    <a href="INSTALL.html">Install</a>
+    <a href="USER_GUIDE.html">Guides</a>
+    <a href="https://github.com/ivanmaric465-alt/benchvault">GitHub</a>
+  </nav>
+</header>
+
+<main class="doc-shell">
+  <details class="doc-nav-mobile">
+    <summary>All guides</summary>
+    <nav class="doc-nav"><a href="INSTALL.html" aria-current="page">Install Guide</a>
+<a href="USER_GUIDE.html">User Guide</a>
+<a href="ADMIN_GUIDE.html">Administrator Guide</a>
+<a href="DOCKER_DEPLOY_GUIDE.html">Deployment Guide</a>
+<a href="CHANGELOG.html">Changelog</a></nav>
+  </details>
+  <nav class="doc-nav doc-nav-desktop" aria-label="Documentation"><a href="INSTALL.html" aria-current="page">Install Guide</a>
+<a href="USER_GUIDE.html">User Guide</a>
+<a href="ADMIN_GUIDE.html">Administrator Guide</a>
+<a href="DOCKER_DEPLOY_GUIDE.html">Deployment Guide</a>
+<a href="CHANGELOG.html">Changelog</a></nav>
+  <article class="doc-body">
+    <p class="doc-eyebrow">BenchVault v5.0.4</p>
+    <h1>Install Guide</h1>
+    <p>This guide takes you from nothing to a working BenchVault your whole lab can
+use. It assumes you have never used Docker. Budget about 10 minutes.</p>
+<p>If BenchVault is already running and you just want to use it, you want the
+<a href="USER_GUIDE.html">User Guide</a> instead.</p>
+<hr />
+<h2 id="1-what-you-need-first">1. What you need first</h2>
+<p><strong>A computer that stays switched on.</strong> Whatever you install BenchVault on
+becomes the lab's server. When it sleeps or shuts down, BenchVault goes with
+it. An old desktop in the corner is fine; a laptop that goes home each night is
+not.</p>
+<p><strong>Docker.</strong> Download it from <a href="https://www.docker.com/products/docker-desktop/">docker.com</a>:</p>
+<ul>
+<li><strong>Windows / macOS</strong> — install Docker Desktop and start it. You'll see a whale
+  icon in your system tray or menu bar when it's running.</li>
+<li><strong>Linux</strong> — install Docker Engine and the Compose plugin from your
+  distribution's packages.</li>
+</ul>
+<blockquote>
+<p><strong>What is Docker?</strong> It runs pre-packaged bundles called <em>containers</em>. Each
+one carries an application and everything it needs to run, already
+configured. It means you never install or set up a database, Python, or
+Node — BenchVault brings its own, and they can't collide with anything else
+on the machine.</p>
+</blockquote>
+<p><strong>BenchVault itself.</strong> Download this repository as a ZIP and unpack it, or if
+you have <code>git</code>:</p>
+<pre><code class="language-bash">git clone https://github.com/ivanmaric465-alt/benchvault.git
+cd benchvault
+</code></pre>
+<hr />
+<h2 id="2-set-your-password">2. Set your password</h2>
+<p>BenchVault keeps its data in a database that needs a password. Copy the example
+settings file and set one:</p>
+<pre><code class="language-bash">cp .env.example .env
+</code></pre>
+<p>Open <code>.env</code> in any text editor and change this line:</p>
+<pre><code>POSTGRES_PASSWORD=change-me
+</code></pre>
+<p>Pick anything you like. <strong>You will not need to type this again</strong> — nobody logs
+into BenchVault with it; it's only how BenchVault's own pieces talk to each
+other. Just don't leave it as <code>change-me</code>, and don't share the file.</p>
+<blockquote>
+<p>Everything in <code>.env</code> is read directly by BenchVault's containers. If your
+computer happens to have <code>POSTGRES_PASSWORD</code> or <code>POSTGRES_DB</code> set for other
+software, it is ignored — what's in this file wins.</p>
+</blockquote>
+<hr />
+<h2 id="3-decide-who-can-reach-it">3. Decide who can reach it</h2>
+<p>This is the one decision that trips people up, so it's worth 30 seconds now.
+Two settings in <code>.env</code> must <strong>agree with each other</strong>, or people will click
+"Sign in" and nothing will happen, with no error message explaining why.</p>
+<p><strong>Option A — just this computer</strong> (trying it out)</p>
+<pre><code>DOMAIN=
+BENCHVAULT_COOKIE_SECURE=false
+</code></pre>
+<p>Reach it at <code>http://localhost</code>.</p>
+<p><strong>Option B — everyone on the lab network</strong> (most labs want this)</p>
+<pre><code>DOMAIN=
+BENCHVAULT_COOKIE_SECURE=false
+</code></pre>
+<p>Same settings as Option A. Others reach it at <code>http://&lt;this-computer's-ip&gt;</code> —
+for example <code>http://192.168.1.50</code>. Find that address with <code>ipconfig</code> on
+Windows or <code>ip addr</code> on Linux/macOS.</p>
+<p><strong>Option C — over the internet, with your own domain</strong></p>
+<pre><code>DOMAIN=benchvault.your-university.edu
+BENCHVAULT_COOKIE_SECURE=true
+</code></pre>
+<p>Point that domain's DNS at this computer first. BenchVault obtains and renews
+an HTTPS certificate automatically.</p>
+<blockquote>
+<p><strong>The trap:</strong> <code>BENCHVAULT_COOKIE_SECURE=true</code> tells browsers to send the
+login cookie only over HTTPS. Combine it with a plain <code>http://</code> address and
+the browser silently discards the cookie — login appears to do nothing at
+all. Keep both settings on the same side: plain HTTP <em>and</em> <code>false</code>, or a real
+domain <em>and</em> <code>true</code>.</p>
+</blockquote>
+<hr />
+<h2 id="4-start-it">4. Start it</h2>
+<pre><code class="language-bash">docker compose up -d
+</code></pre>
+<p>The first run downloads BenchVault's containers, which takes a few minutes.
+Afterwards it starts in seconds. You'll see something like:</p>
+<pre><code> Container benchvault-db-1  Creating
+ Container benchvault-db-1  Created
+ Container benchvault-api-1  Creating
+ Container benchvault-api-1  Created
+ Container benchvault-caddy-1  Creating
+ Container benchvault-caddy-1  Created
+ Container benchvault-db-1  Starting
+ Container benchvault-db-1  Started
+ Container benchvault-db-1  Waiting
+ Container benchvault-db-1  Healthy
+ Container benchvault-api-1  Starting
+ Container benchvault-api-1  Started
+ Container benchvault-caddy-1  Starting
+ Container benchvault-caddy-1  Started
+</code></pre>
+<p>The <code>benchvault-</code> prefix comes from the name of the folder you're in, so yours
+may differ.</p>
+<p>Check all three are running:</p>
+<pre><code class="language-bash">docker compose ps
+</code></pre>
+<pre><code>NAME                  IMAGE                     SERVICE   STATUS
+benchvault-api-1      benchvault-api:latest     api       Up (healthy)
+benchvault-caddy-1    benchvault-web:latest     caddy     Up
+benchvault-db-1       postgres:16               db        Up (healthy)
+</code></pre>
+<p>(Abbreviated — the real output also lists the command, creation time, and
+ports.)</p>
+<p>Both <code>db</code> and <code>api</code> should say <strong>healthy</strong>. If they don't, jump to
+<a href="#8-when-something-goes-wrong">section 8</a>.</p>
+<hr />
+<h2 id="5-claim-the-first-account-do-this-now">5. Claim the first account — do this now</h2>
+<p>Open BenchVault in a browser (<code>http://localhost</code>, or your address from step 3).</p>
+<p>Because nobody has an account yet, it opens straight to a <strong>setup screen</strong>. Fill
+it in. That first account becomes the lab's <strong>Master</strong> — the administrator who
+can manage everyone else.</p>
+<p><img alt="The first-run setup screen" src="images/setup-founder.png" /></p>
+<blockquote>
+<p><strong>Do this before you share the address.</strong> Until someone claims that first
+account, the setup screen is open to anyone who can reach BenchVault, and
+whoever gets there first becomes the administrator. Claim it immediately —
+before you send the link around, and before you point a domain at the
+machine.</p>
+</blockquote>
+<p>Once claimed, the setup screen is gone for good and everyone else sees a normal
+sign-in page.</p>
+<hr />
+<h2 id="6-add-your-team">6. Add your team</h2>
+<p>Go to <strong>Account → Users</strong> and create an account for each person.</p>
+<ul>
+<li><strong>Regular</strong> — works with their own experiments, samples, and bookings. This is
+  the right choice for nearly everyone.</li>
+<li><strong>Master</strong> — full access to every record plus the admin screens. Give this to
+  the one or two people who actually run the system.</li>
+</ul>
+<p>Send each person their username, the password you set, and the address. They
+can change their own password under <strong>Account</strong>.</p>
+<hr />
+<h2 id="7-check-it-works">7. Check it works</h2>
+<ol>
+<li>Sign in as yourself.</li>
+<li>Go to <strong>Experiments</strong> and click <strong>New Experiment</strong>.</li>
+<li>Give it a title and save it.</li>
+<li>Confirm it appears in the list, then delete it.</li>
+</ol>
+<p>If that worked, BenchVault is properly installed. The
+<a href="USER_GUIDE.html">User Guide</a> covers everything your lab can do from here, and
+the <a href="ADMIN_GUIDE.html">Administrator Guide</a> covers what Master users manage.</p>
+<hr />
+<h2 id="8-when-something-goes-wrong">8. When something goes wrong</h2>
+<table>
+<thead>
+<tr>
+<th>What you see</th>
+<th>Why</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>port is already allocated</code></td>
+<td>Something else on the machine already uses port 80</td>
+<td>Set <code>HTTP_PORT=8080</code> in <code>.env</code>, run <code>docker compose up -d</code> again, then use <code>http://localhost:8080</code></td>
+</tr>
+<tr>
+<td>Sign in does nothing — no error, page just sits there</td>
+<td><code>BENCHVAULT_COOKIE_SECURE=true</code> while you're on a plain <code>http://</code> address</td>
+<td>Set it to <code>false</code> in <code>.env</code>, then <code>docker compose up -d</code>. See <a href="#3-decide-who-can-reach-it">section 3</a></td>
+</tr>
+<tr>
+<td>Works on the server, unreachable from other computers</td>
+<td>The machine's firewall is blocking the port</td>
+<td>Allow the port through the firewall. Confirm you're using the server's network address, not <code>localhost</code></td>
+</tr>
+<tr>
+<td>The setup screen appears again after a restart</td>
+<td>The database volume was deleted</td>
+<td>Restore from a backup — see the <a href="DOCKER_DEPLOY_GUIDE.html">Deployment Guide</a></td>
+</tr>
+<tr>
+<td>Nobody can sign in and you've lost the Master password</td>
+<td>—</td>
+<td><code>docker compose exec api python scripts/reset_master_password.py</code> — it asks which account to reset and lets you set or generate a new password</td>
+</tr>
+<tr>
+<td><code>db</code> or <code>api</code> never reaches <strong>healthy</strong></td>
+<td>Usually a bad value in <code>.env</code></td>
+<td><code>docker compose logs api</code> and <code>docker compose logs db</code> — the reason is normally in the last few lines</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Useful commands</strong></p>
+<pre><code class="language-bash">docker compose logs api      # what the application is saying
+docker compose ps            # what's running
+docker compose restart       # restart everything
+docker compose down          # stop (your data is kept)
+docker compose up -d         # start again
+</code></pre>
+<blockquote>
+<p><code>docker compose down</code> is safe — it stops the containers but keeps your data.
+Adding <code>-v</code> to that command <strong>deletes your database permanently</strong>. Don't,
+unless you intend to erase everything.</p>
+</blockquote>
+<hr />
+<h2 id="keeping-it-running">Keeping it running</h2>
+<p>Once BenchVault matters to your lab, read the
+<a href="DOCKER_DEPLOY_GUIDE.html">Deployment Guide</a>. It covers backups and how to
+practise restoring them, upgrading to new versions, and moving to a proper
+domain with HTTPS.</p>
+<p>Set up backups before you need them.</p>
+<hr />
+<h3 id="a-note-on-platforms">A note on platforms</h3>
+<p>These instructions were tested on Windows. The macOS and Linux steps are the
+same commands, written from Docker's official documentation, but have not been
+verified on those systems — the Docker installation step is where they differ
+most.</p>
+  </article>
+</main>
+
+<footer class="doc-footer">
+  <span>BenchVault v5.0.4 — AGPL-3.0-only</span>
+  <a href="https://github.com/ivanmaric465-alt/benchvault">github.com/ivanmaric465-alt/benchvault</a>
+</footer>
+</body>
+</html>

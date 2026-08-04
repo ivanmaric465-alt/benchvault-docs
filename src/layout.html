@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}} — BenchVault v{{VERSION}}</title>
+<meta name="description" content="{{TITLE}} for BenchVault, the self-hosted electronic lab notebook.">
+<link rel="icon" type="image/png" href="images/app_icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<div class="spectrum-rule"></div>
+<header class="topbar">
+  <a class="brand" href="index.html">
+    <img src="images/app_icon.png" alt="" width="28" height="28">
+    <span>BenchVault</span>
+  </a>
+  <nav class="topbar-links">
+    <a href="index.html">Home</a>
+    <a href="INSTALL.html">Install</a>
+    <a href="USER_GUIDE.html">Guides</a>
+    <a href="https://github.com/ivanmaric465-alt/benchvault">GitHub</a>
+  </nav>
+</header>
+
+<main class="doc-shell">
+  <details class="doc-nav-mobile">
+    <summary>All guides</summary>
+    <nav class="doc-nav">{{NAV}}</nav>
+  </details>
+  <nav class="doc-nav doc-nav-desktop" aria-label="Documentation">{{NAV}}</nav>
+  <article class="doc-body">
+    <p class="doc-eyebrow">BenchVault v{{VERSION}}</p>
+    <h1>{{TITLE}}</h1>
+    {{CONTENT}}
+  </article>
+</main>
+
+<footer class="doc-footer">
+  <span>BenchVault v{{VERSION}} — AGPL-3.0-only</span>
+  <a href="https://github.com/ivanmaric465-alt/benchvault">github.com/ivanmaric465-alt/benchvault</a>
+</footer>
+</body>
+</html>

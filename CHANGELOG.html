@@ -1,0 +1,2025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Changelog — BenchVault v5.0.4</title>
+<meta name="description" content="Changelog for BenchVault, the self-hosted electronic lab notebook.">
+<link rel="icon" type="image/png" href="images/app_icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<div class="spectrum-rule"></div>
+<header class="topbar">
+  <a class="brand" href="index.html">
+    <img src="images/app_icon.png" alt="" width="28" height="28">
+    <span>BenchVault</span>
+  </a>
+  <nav class="topbar-links">
+    <a href="index.html">Home</a>
+    <a href="INSTALL.html">Install</a>
+    <a href="USER_GUIDE.html">Guides</a>
+    <a href="https://github.com/ivanmaric465-alt/benchvault">GitHub</a>
+  </nav>
+</header>
+
+<main class="doc-shell">
+  <details class="doc-nav-mobile">
+    <summary>All guides</summary>
+    <nav class="doc-nav"><a href="INSTALL.html">Install Guide</a>
+<a href="USER_GUIDE.html">User Guide</a>
+<a href="ADMIN_GUIDE.html">Administrator Guide</a>
+<a href="DOCKER_DEPLOY_GUIDE.html">Deployment Guide</a>
+<a href="CHANGELOG.html" aria-current="page">Changelog</a></nav>
+  </details>
+  <nav class="doc-nav doc-nav-desktop" aria-label="Documentation"><a href="INSTALL.html">Install Guide</a>
+<a href="USER_GUIDE.html">User Guide</a>
+<a href="ADMIN_GUIDE.html">Administrator Guide</a>
+<a href="DOCKER_DEPLOY_GUIDE.html">Deployment Guide</a>
+<a href="CHANGELOG.html" aria-current="page">Changelog</a></nav>
+  <article class="doc-body">
+    <p class="doc-eyebrow">BenchVault v5.0.4</p>
+    <h1>Changelog</h1>
+    <p>All notable changes to the BenchVault Application will be documented in this file.</p>
+<p>The format is based on <a href="https://keepachangelog.com/en/1.0.0/">Keep a Changelog</a>,
+and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
+<hr />
+<h2 id="unreleased">[Unreleased]</h2>
+<h3 id="fixed">Fixed</h3>
+<ul>
+<li><strong><code>scripts/restore.sh</code> / <code>restore-test.sh</code> "latest" selection.</strong> The picker
+  sorted by file mtime, so the data-volume <code>.tgz</code> (written after the <code>.sql.gz</code>
+  in the same run) was chosen over the database dump. Selection is now by
+  filename timestamp, preferring the most complete format
+  (<code>.zip</code> &gt; <code>.sql.gz</code> &gt; <code>.tgz</code>).</li>
+<li><strong><code>scripts/restore.sh --from-cloud</code> false "backup file not found".</strong> The
+  existence check ran on the host, but cloud downloads land inside the api
+  container (<code>/data/backups/cloud_downloads/...</code>); the check now runs in the
+  container.</li>
+<li><strong><code>scripts/restore-test.sh</code> drill with a <code>.tgz</code> source.</strong> The drill verified
+  restored users, which a data-volume-only backup can never satisfy;
+  verification is now source-aware (users for <code>.zip</code>/<code>.sql.gz</code>, files in
+  <code>/data</code> for <code>.tgz</code>).</li>
+<li><strong><code>scripts/restore.sh</code> restore from a cloud download actually restores.</strong>
+  The per-format restore steps piped from the host (<code>&lt; "$SOURCE_FILE"</code>), but
+  <code>--from-cloud</code> sources live inside the api container — the restore died
+  with "No such file or directory" before touching anything. All branches
+  (<code>.zip</code>/<code>.sql.gz</code>/<code>.sql</code>/<code>.tgz</code>) now detect an in-container source and run
+  the restore inside the containers. <code>--from-cloud</code> also skips re-downloading
+  when the file is already present in the container.</li>
+<li><strong><code>scripts/restore-test.sh</code> records the drill result.</strong> The drill passed but
+  never wrote <code>restore_test_status</code>, so the Server section always showed
+  "No restore test recorded". The outcome (success/failed, file, message) is
+  now written to the api container on exit — the Backup card reflects it.</li>
+</ul>
+<h2 id="504-2026-08-04">[5.0.4] - 2026-08-04</h2>
+<h3 id="changed">Changed</h3>
+<ul>
+<li><strong>Automatic backups explained in the UI.</strong> The Cloud Backup panel's toggle
+  now says how the scheduler works: the API checks every 15 minutes and
+  backs up when the last backup is older than the interval (24h default,
+  <code>BENCHVAULT_AUTO_BACKUP_INTERVAL_HOURS</code>), with results under
+  Server → Backup &amp; restore.</li>
+<li><strong>Scripted <code>--cloud</code> backups reset the scheduler clock</strong> (<code>backup.sh</code>), so
+  the automatic backup doesn't re-fire right after a manual upload.</li>
+</ul>
+<h2 id="503-2026-08-04">[5.0.3] - 2026-08-04</h2>
+<h3 id="added">Added</h3>
+<ul>
+<li><strong>Automatic cloud backups.</strong> The Cloud Backup panel's "Automatic backups"
+  toggle now actually runs: a scheduler in the API performs a cloud backup
+  when enabled and the last one is older than the interval
+  (<code>BENCHVAULT_AUTO_BACKUP_INTERVAL_HOURS</code>, default 24h). A PostgreSQL
+  advisory lock elects a single leader among gunicorn workers, so only one
+  worker backs up even with <code>WEB_CONCURRENCY &gt; 1</code>.</li>
+<li><strong><code>scripts/backup.sh --cloud</code>.</strong> The scripted backup can now also upload
+  both artifacts to the cloud provider configured in the app — one cron line
+  gives you daily off-box backups (the in-app "Back up now" equivalent).</li>
+<li><strong>Update banner: version, commits behind, and what's new.</strong> The update
+  notification now reads "Version X.X.X available! (N commits behind)" and
+  shows a short preview of the release notes (with a link to the full notes).</li>
+</ul>
+<h2 id="502-2026-08-04">[5.0.2] - 2026-08-04</h2>
+<h3 id="changed_1">Changed</h3>
+<ul>
+<li><strong>License: MIT → AGPL-3.0-only.</strong> BenchVault is now licensed under the GNU
+  Affero General Public License v3.0 (network copyleft: anyone who modifies
+  and serves the app must share their modifications). Self-hosting an
+  unmodified copy carries no obligations. See <a href="../LICENSE">LICENSE</a>.</li>
+<li><strong>Server → Updates card now shows the automatic update check.</strong> The card
+  previously displayed the legacy cron-script status, which Docker installs
+  never populate ("Update checks are not configured on this server"). It now
+  uses the built-in check: current/latest version, status badge, release
+  notes link, and a helpful error when GitHub can't be reached (e.g. private
+  repository without <code>BENCHVAULT_UPDATE_CHECK_TOKEN</code>).</li>
+<li><strong>Docker-native backup tooling.</strong> <code>scripts/backup.sh</code>, <code>restore.sh</code>, and
+  <code>restore-test.sh</code> were rewritten for the Compose deployment (they previously
+  targeted the retired systemd layout): backups run through the containers and
+  write the status files the Server section reads; restore supports <code>.zip</code>
+  full backups, <code>.sql.gz</code>/<code>.sql</code> dumps and <code>.tgz</code> data volumes, with
+  <code>--from-cloud</code> downloads, safety backups, and api stop/start around the
+  restore; <code>restore-test.sh</code> is an automated restore drill into a throwaway
+  stack. The api image now ships <code>postgresql-client-16</code> (matching the
+  <code>postgres:16</code> server), fixing in-app/cloud backups on Docker ("pg_dump not
+  found"). The superseded <code>scripts/check_updates.sh</code> cron script was removed
+  (the automatic update check replaced it).</li>
+</ul>
+<h2 id="501-2026-08-04">[5.0.1] - 2026-08-04</h2>
+<h3 id="added_1">Added</h3>
+<ul>
+<li><strong>Automatic update notifications.</strong> Every install now checks GitHub for a
+  newer BenchVault release (cached for 6 hours, silently skipped when the
+  server is offline) and the web app shows a dismissible banner when one
+  exists. No cron, no manual check — updates surface on their own after
+  <code>docker compose pull &amp;&amp; docker compose up -d</code>.</li>
+<li><strong>Private-repository support.</strong> <code>BENCHVAULT_UPDATE_CHECK_TOKEN</code> (a
+  fine-grained PAT with read-only Contents or Metadata access) lets the
+  update check authenticate to GitHub when the repository is private; a
+  missing token now explains itself instead of failing silently.</li>
+</ul>
+<h2 id="500-2026-08-03">[5.0.0] - 2026-08-03</h2>
+<h3 id="whats-new-in-50">What's new in 5.0</h3>
+<p>BenchVault is now a web app: open it in your browser instead of installing a desktop program. The old PyQt6 desktop client and the Flutter mobile app are both gone — everyone, on any device, uses the same React-based interface, talking to the same FastAPI server. Installing (or updating) the whole stack is one command: <code>docker compose up -d</code>.</p>
+<p>This release also brings the modules that make BenchVault a complete lab notebook in the browser:
+- <strong>Experiments</strong> — reactants and a built-in molarity calculator that works out mass to weigh or volume to pipette for you.
+- <strong>Chemical Inventory</strong> — track stock levels, with Excel import/export for bulk updates.
+- <strong>Samples</strong> — with nested analyses (e.g. NMR, HPLC runs) attached to each sample.
+- <strong>Templates</strong> — save an experiment as a reusable starting point.
+- <strong>Equipment scheduling</strong> — book instrument time on a weekly calendar.
+- <strong>Graph</strong> — a visual, click-through map of how experiments, samples, and chemicals connect.
+- <strong>Search and Tags</strong> — find anything across modules, and organize records with color-coded tags.
+- <strong>AI assistant</strong> — a chat drawer that can look up records for you.
+- <strong>Audit Log</strong> (Master accounts only) — a full history of who changed what.</p>
+<h3 id="added_2">Added</h3>
+<ul>
+<li><strong>Web frontend (walking skeleton)</strong>: New React 18 + TypeScript + Vite + Mantine SPA under <code>frontend/</code> — login, session bootstrap-on-load, and a read-only Experiments list — served same-origin with the API. Auth uses an in-memory access token plus an httpOnly <code>bv_refresh</code> refresh cookie (<code>BENCHVAULT_COOKIE_SECURE</code> gates the <code>Secure</code> flag so the cookie works over local http). Deployed via <code>deploy/deploy_web.sh</code>. First step toward converging on a single web client and retiring the desktop/Flutter apps.</li>
+<li><strong>CI for the web frontend</strong>: The GitHub Actions workflow now also runs on the <code>web-frontend-w0</code> branch and adds a <code>frontend</code> job (npm <code>lint</code> + <code>test</code> + <code>build</code>).</li>
+<li><strong>Web experiments (W1)</strong>: The web app now does full Experiments CRUD — detail view, create, and edit (core fields + parameters + tags) with optimistic-lock <code>409</code> conflict handling (reload-latest-and-notify); attachments (upload/download/delete); and the record-integrity surface (delete → Trash, Restore, and Master-only Purge with sample-reference <code>409</code>). Reactants render read-only (full reactant + inventory editing arrives with W2).</li>
+<li><strong>Web inventory (W2a)</strong>: New Chemical Inventory module at <code>/inventory</code> — searchable item table with low-stock highlighting, add/edit/delete (delete surfaces <code>403</code> permission and <code>409</code> in-use conflicts distinctly), plus Excel import (auto-detected column mapping + preview) and export, mirroring the desktop inventory window. (<code>frontend/</code>)</li>
+<li>Web reactant editor (W2b): the experiment detail page now edits reactants inline — pick a chemical from inventory, choose a reactant type (Reactant / Stock Solution / Solvent / Other), and the molarity calculator computes mass to weigh or volume to pipette. Adding/removing a reactant consumes/restores the linked inventory quantity when auto-deduct is enabled (removal prompts to restore or keep consumed), mirroring the desktop reactant workflow. (<code>frontend/</code>)</li>
+<li>Experiments reactant calc model: Final Volume moved out of the experiment Edit form into the Parameters area as a pinned, optional field; changing it (or editing a reactant's target molarity / stock concentration / volume / mass via the new per-row editor) recalculates the affected reactants and re-syncs the linked inventory, behind a confirmation warning. The reactants table now also shows stock concentration and pipette volume. Adds <code>PUT /reactants/{id}</code>. (<code>api/</code>, <code>frontend/</code>)</li>
+<li>Web samples (W2c): New Samples module at <code>/samples</code> — searchable list with an analyses-count column, a detail view that hosts nested <strong>analyses</strong> (create/edit/delete) each with file attachments (upload/download/delete), sample create/edit (name, storage location, parent experiment), and the record-integrity surface (delete → Trash, Restore, Master-only Purge). Adds <code>PUT /samples/{id}</code> (sample edit; owner-or-Master, last-write-wins) and <code>GET /analysis-files/{id}</code> (analysis-file download with path allow-list + <code>nosniff</code>). (<code>api/</code>, <code>frontend/</code>)</li>
+<li>Web frontend (W3a): Dashboard home page at <code>/</code> — an event calendar (experiments / samples / analyses by date, with a day-detail panel and click-through to experiments/samples), a recent-activity feed, and a Master-only totals strip (experiments / samples / inventory / users / DB size). Read-only; adds <code>@mantine/dates</code> + <code>dayjs</code>. Statistics/usage charts deferred to a later pass.</li>
+<li>Web frontend (W3b): Dashboard refinements — the event calendar now sits beside its day-detail panel (compact, no wasted whitespace), calendar <strong>analyses link to their parent sample</strong> (adds <code>sample_id</code> to the <code>/calendar/date</code> analysis events), and a new <strong>Inventory alerts</strong> panel lists low-stock items (via the existing <code>GET /inventory/alerts</code>) linking to the inventory page. Analyses now require a date on save.</li>
+<li>Web equipment scheduling (W4): New Equipment module at <code>/equipment</code> — manage lab
+  instruments (add/edit, Master-only delete) and book/cancel time reservations on a
+  weekly per-instrument grid (click an empty slot to reserve; <strong>409</strong> overlaps are
+  rejected with a conflict notice; cancel is owner-or-Master). Reservations also now
+  appear as a 4th event type on the dashboard calendar (month markers + day panel),
+  via a <code>CalendarManager</code> change. Backed by the pre-existing <code>/equipment</code> and
+  <code>/reservations</code> APIs. (<code>api/</code>, <code>frontend/</code>)</li>
+<li>Web audit + activity logs (W5): New <strong>Audit Log</strong> page at <code>/audit</code> (Master-only,
+  gated by a reusable <code>MasterRoute</code> guard and a Master-only nav item) over the formal
+  <code>AuditLog</code> trail — server-side filters (user / entity type / action type / date
+  range / limit) plus client-side text search, colored action badges, entity
+  deep-links, and row-expandable details. New all-users <strong>Activity Log</strong> page at
+  <code>/activity</code> — a full-page view of the cross-module recent-changes feed with a module
+  filter, limit selector, and text search, reached via a "View all →" link on the
+  dashboard's recent-activity panel (no new nav item). Adds <code>GET /audit/action-types</code>
+  (Master-only distinct action types) and raises the <code>/dashboard/recent</code> limit cap
+  from 50 to 500. Both history tables paginate client-side (~50 rows/page).
+  (<code>api/</code>, <code>frontend/</code>)</li>
+<li>Audit coverage extension: the audit log now records <strong>CREATE and UPDATE</strong> of
+  experiments, samples, analyses, and equipment (plus reservation creation) with
+  field-level detail — a changed-fields diff (<code>old</code>→<code>new</code>) on UPDATE and a snapshot
+  on CREATE, skipping no-op saves. Fills the analysis/equipment gaps and upgrades the
+  previously generic experiment/sample UPDATE entries. Backend-only (router-level, via
+  a new <code>api/audit_utils.py</code>); the <code>/audit</code> page already renders the new entries. (<code>api/</code>)</li>
+<li>Web knowledge graph (W6): new <strong>Graph</strong> page at <code>/graph</code> (replaces the unused
+  Statistics slot) — search any record, see its direct connections (samples, analyses,
+  shared tags, shared reactant chemicals) as a force-directed graph, and click a node to
+  re-center and traverse. Depth‑1, collapsible inspector (open by default) with grouped
+  connections + deep-links, and <code>?focus=&lt;type&gt;:&lt;id&gt;</code> URL state for shareable/reloadable
+  views. Backed by two new endpoints <code>GET /graph/neighbors</code> and <code>GET /graph/search</code>
+  (a read-only <code>GraphManager</code>). (<code>api/</code>, <code>frontend/</code>)</li>
+<li>Web experiment templates (W7): new <strong>Templates</strong> page at <code>/templates</code> — save any
+  experiment as a reusable template (capturing its reactants, parameters and tags),
+  start a new experiment from a template in one click, and rename or delete your own
+  templates (Masters can manage any). Instantiation happens server-side in a single
+  transaction, so the new experiment lands on the existing detail page with every panel
+  already populated. Unlike the desktop templates window, web templates carry parameters
+  and tags, and their metadata can be edited after creation. Adds
+  <code>POST /templates/from-experiment/{id}</code>, <code>POST /templates/{id}/instantiate</code>,
+  <code>PUT /templates/{id}</code>, <code>GET /templates/{id}/parameters</code> and <code>GET /templates/{id}/tags</code>,
+  plus a new <code>TemplateTags</code> table (migration <code>0003</code>). (<code>api/</code>, <code>frontend/</code>)</li>
+<li>Web template detail page: clicking a template name opens a read-only view of everything
+  it captured — reactants, parameters, tags, procedure and final volume — so you can see
+  what a template is before using it, with Use and (for owners/Masters) Edit right there.
+  Frontend-only, over the existing template read endpoints. (<code>frontend/</code>)</li>
+<li>Analysis categories (W8): analysis <em>types</em> are now first-class <strong>categories</strong> — pick from
+  existing ones or type a new name (created on the fly). Consistent, case-insensitive naming
+  replaces free text.</li>
+<li><strong>Master cleanup page</strong> (Analysis Categories): rename, recolor, merge duplicates, delete unused.</li>
+<li>Categories carry a color, shown as a badge on each analysis and as their own node in the graph:
+  a sample links to its categories, and a category links to the distinct samples it was performed
+  on (by name), so every sample sharing an analysis type is one hop apart.</li>
+<li>Global search matches category names.</li>
+<li>Backend: <code>AnalysisCategories</code> table + <code>SampleAnalyses.CategoryID</code> (migration <code>0004</code>), with a
+  backfill that maps existing free-text types. Desktop/mobile keep working — analysis endpoints
+  still accept <code>analysis_type</code> strings and resolve them to categories.</li>
+<li>Web sample QR codes: print a QR label for any sample (sample detail page → <strong>QR label</strong>, with a
+  live preview and PDF download in the desktop-matching label sizes), and <strong>scan</strong> a label with your
+  device camera from the samples list header to jump straight to that sample (manual ID entry as a
+  fallback). Sample IDs are now shown as their own column in the samples list and in the detail
+  header, so a code that reads <code>SAMPLE-&lt;id&gt;</code> is easy to relate back to a record. Frontend-only, over
+  the existing sample API. (<code>frontend/</code>)</li>
+<li>Web advanced search: new <strong>Search</strong> page at <code>/search</code> — query any module (Experiments / Samples /
+  Inventory / Equipment) by text and/or tag filters (all-of / any-of / none-of), with results in a
+  table you can click through to the record. Runs on submit (not per keystroke) and is available to
+  all users. Frontend-only, over the existing <code>POST /search/advanced</code>. (<code>frontend/</code>)</li>
+<li>Web tag management: new <strong>Tags</strong> page at <code>/tags</code> (all users) — create, rename, recolor, and delete
+  tags, each with a usage count. Tags now carry a <strong>color</strong> shown as a badge across the app, <strong>samples</strong>
+  can be tagged (not just experiments), and you can create a tag inline while tagging a record. Adds
+  <code>PUT /tags/{id}</code> (rename/recolor; owner-or-Master, audited), enriches <code>GET /tags</code> with <code>created_by</code>
+  and <code>usage_count</code>, and adds sample-tag endpoints (<code>GET</code>/<code>POST</code>/<code>DELETE /samples/{id}/tags</code>).
+  (<code>api/</code>, <code>frontend/</code>)</li>
+<li>Web settings: new <strong>Master-only Settings</strong> page at <code>/settings</code> — toggle app preferences (inventory
+  module, inventory auto-deduct, recent activity) with save-on-toggle, and configure <strong>email/SMTP</strong>
+  (server, port, sender, TLS, weekly summary) with a send-test-email button. Master-only in depth: a
+  guarded route, a Master-only nav item, and Master-only endpoints. Frontend-only, over the existing
+  <code>/settings</code> API. (<code>frontend/</code>)</li>
+<li>Web settings feature gating: the web app now honors the <strong>Inventory module</strong> and <strong>Recent
+  activity</strong> switches on the Master-only Settings page. Turning <strong>Inventory</strong> off hides the
+  Inventory nav item, redirects <code>/inventory</code> to the dashboard, replaces "Add reactant" with a
+  note (existing reactants stay editable), and stops inventory auto-deduction; turning <strong>Recent
+  activity</strong> off hides the dashboard recent-activity panel and redirects <code>/activity</code>. Both are
+  app-wide (all users) and take effect live when a Master toggles them; an unset or unreadable
+  setting defaults to on. Frontend-only, over the existing <code>/settings</code> API. (<code>frontend/</code>)</li>
+<li>Web account area + cloud backup: a new <strong>Account</strong> hub, reached from a top-right avatar menu
+  (<strong>Account settings</strong> / <strong>Log out</strong>), gathers your settings in one place — app <strong>Preferences</strong>
+  and <strong>Email</strong> (Master-only) plus a new <strong>Change password</strong> section for everyone — replacing the
+  standalone Settings page (<code>/settings</code> now redirects to the account area). Adds a Master-only
+  <strong>Cloud Backup</strong> section: pick a provider (Koofr / Nextcloud / pCloud / Box / WebDAV), test the
+  connection, save credentials, run a backup on demand, and browse existing cloud backups. Restore
+  stays a guided operation — the page shows the exact <code>scripts/restore.sh … --from-cloud</code> command
+  to run on the server (and the last-restore status), with no browser-triggered restore or backup
+  download. Saving a provider with a secret field left blank keeps the stored credential, so you
+  can change the backup folder without re-typing passwords. Frontend over the existing <code>/cloud/*</code>
+  and <code>/health</code> APIs, plus one backend change: <code>POST /cloud/config</code> now preserves existing
+  credentials on a blank field for the same provider. (<code>api/</code>, <code>frontend/</code>)</li>
+<li>Web server &amp; database health: a new Master-only <strong>Server</strong> section in the Account area
+  (<code>/account/server</code>) shows the health of the deployment at a glance — API and database status,
+  database size, per-table record counts, active connections, oldest/newest experiment, the
+  automatic-backup and last-restore status, and whether a software update is available. Read-only,
+  with a single manual <strong>Refresh</strong> (no background polling). Frontend-only, over the existing
+  <code>/health</code>, <code>/dashboard/database-health</code>, and <code>/info</code> APIs. (<code>frontend/</code>)</li>
+</ul>
+<h3 id="changed_2">Changed</h3>
+<ul>
+<li><strong>Auth error code</strong>: A missing or malformed <code>Authorization</code> header now returns <code>401 Unauthorized</code> (with a <code>WWW-Authenticate: Bearer</code> challenge) instead of <code>403 Forbidden</code>, per RFC 7235. <code>403</code> remains reserved for authenticated-but-forbidden requests (wrong role / not the owner). Implemented via <code>HTTPBearer(auto_error=False)</code> + an explicit check in <code>verify_token</code>.</li>
+<li><strong>Analysis date now required server-side</strong>: <code>POST /samples/{id}/analyses</code> and <code>PUT /analyses/{id}</code> reject a missing, blank, or whitespace-only <code>analysis_date</code> with <code>422</code> (previously it defaulted to an empty string). Since the date columns are free-text, a blank date used to persist and later break date-based reads; validation now enforces a non-empty, trimmed date at the API boundary. The web <code>AnalysisCreatePayload.analysis_date</code> type is correspondingly required. (<code>api/</code>, <code>frontend/</code>)</li>
+</ul>
+<h3 id="fixed_1">Fixed</h3>
+<ul>
+<li><strong>Cold-start worker race (Docker)</strong>: gunicorn imports the app once per worker and <code>DatabaseManager.__init__</code> runs schema DDL, so with <code>WEB_CONCURRENCY&gt;1</code> concurrent workers raced the same <code>CREATE DATABASE</code> / <code>CREATE TABLE IF NOT EXISTS</code> statements and Postgres deadlock-killed one worker on every fresh-volume boot (<code>[ERROR] Worker (pid:N) exited with code 1.</code>, self-healed via respawn). The ensure-database + schema-init critical section is now serialized with a Postgres advisory lock (<code>pg_advisory_lock</code> on the maintenance database); locked workers wait and then no-op. A concurrent <code>CREATE DATABASE</code> from an un-locked older process is tolerated (<code>DuplicateDatabase</code>). (<code>database/db_manager.py</code>)</li>
+<li><strong>Docker stack env leak</strong>: compose variable interpolation gives real shell variables precedence over <code>.env</code>, so a host with legacy desktop-era <code>POSTGRES_DB</code> / <code>POSTGRES_PASSWORD</code> exported silently built a differently-named database with a different password — the <code>${POSTGRES_PASSWORD:?}</code> guard passed on the host value and the <code>pg_isready</code> healthcheck passed regardless. The <code>db</code> and <code>api</code> services now inject <code>POSTGRES_*</code> directly from <code>.env</code> via <code>env_file</code> (immune to that precedence), and the db healthcheck uses the container's own <code>$POSTGRES_USER</code> / <code>$POSTGRES_DB</code>. (<code>docker-compose.yml</code>, <code>.env.example</code>, <code>docs/DOCKER_DEPLOY_GUIDE.md</code>)</li>
+<li><strong>Logout cookie attributes</strong>: <code>_clear_refresh_cookie</code> now mirrors <code>_set_refresh_cookie</code> (<code>httponly</code>, <code>secure</code>, <code>samesite="strict"</code>) instead of Starlette's <code>delete_cookie</code> defaults (<code>samesite="lax"</code>). Cookie matching is unaffected (same name/path), purely cosmetic consistency. (<code>api/routers/auth.py</code>)</li>
+</ul>
+<hr />
+<h2 id="440-2026-06-17">[4.4.0] - 2026-06-17</h2>
+<p><strong>Engineering Foundation &amp; Server-Side Record Integrity</strong></p>
+<blockquote>
+<p>Infrastructure, developer-experience, and server/API record-integrity changes. No breaking changes; existing clients keep working.</p>
+</blockquote>
+<h3 id="added_3">Added</h3>
+<ul>
+<li><strong>Docker / Compose self-hosting</strong>: New <code>Dockerfile</code> and <code>docker-compose.yml</code> stand up the API server and PostgreSQL 16 together (<code>POSTGRES_PASSWORD=… docker compose up --build</code>). The API container applies the baseline schema and migrations on startup and exposes a <code>/api/status</code> healthcheck. Built from a PyQt-free server dependency set for a slim image.</li>
+<li><strong>Continuous Integration (GitHub Actions)</strong>: A <code>CI</code> workflow runs on every push to <code>main</code>/<code>vps-deployment</code> and on pull requests — ruff lint, byte-compile of the Python tree, <code>bash -n</code> shell-syntax checks, and the full pytest suite against a PostgreSQL 16 service container.</li>
+<li><strong>Database migrations (Alembic)</strong>: Adopted Alembic as a forward-migration runner with a no-op baseline revision (<code>0001</code>). All future schema changes are version-tracked revisions applied via <code>scripts/migrate.py</code> (baseline schema + <code>alembic upgrade head</code>). The existing <code>init_database()</code> schema builder is now the frozen baseline authority — no new inline <code>ALTER TABLE</code> blocks.</li>
+<li><strong>Split dependency sets</strong>: <code>requirements-server.txt</code> (API/Docker runtime, no GUI) and <code>requirements-dev.txt</code> (server runtime + pytest/httpx/ruff) alongside the full desktop <code>requirements.txt</code>. Single source of truth for the Docker image and CI.</li>
+<li><strong>Contributor guide</strong>: New <code>CONTRIBUTING.md</code> documents local setup, tests, linting, the Alembic migration workflow, and the Docker stack.</li>
+<li><strong>Record integrity (server/API)</strong>: Experiments now use optimistic locking — a concurrent edit to the same experiment returns <code>409</code> instead of silently overwriting. Deleting an Experiment or Sample now moves it to a recoverable <strong>Trash</strong> (soft delete) with Restore; only a Master can permanently <strong>Purge</strong>. Trash/Restore never change inventory; purging an experiment is blocked while any sample still references it. (Schema via Alembic revision <code>0002</code>. Desktop/mobile UI to follow.)</li>
+</ul>
+<h3 id="changed_3">Changed</h3>
+<ul>
+<li><strong>Lint gate</strong>: Added a conservative ruff configuration (<code>pyproject.toml</code>, pyflakes + core pycodestyle) and cleaned the lint baseline — removed unused imports and dead assignments across the codebase. CI now gates on <code>ruff check</code>.</li>
+</ul>
+<hr />
+<h2 id="430-2026-06-15">[4.3.0] - 2026-06-15</h2>
+<p><strong>Security Hardening, Account Recovery &amp; Logout, and Client Resilience</strong></p>
+<h3 id="added_4">Added</h3>
+<ul>
+<li><strong>Self-Service Password Reset</strong>: <code>POST /api/v1/auth/forgot-password</code> now emails a reset code via the configured SMTP server (previously it stored a token but never sent anything). Returns an honest <code>503</code> when the server has no email configured, keeps the anti-enumeration generic response, and throttles reset requests per user.</li>
+<li><strong>Desktop Forgot Password</strong>: New two-step <strong>Forgot Password?</strong> dialog on the login screen — request a code by email, then submit the code with a new password.</li>
+<li><strong>Logout &amp; Token Revocation</strong>: New <code>POST /api/v1/auth/logout</code> records the access token's JTI in <code>revoked_tokens</code> and invalidates the refresh token + session; <code>verify_token</code> now rejects revoked access tokens immediately instead of trusting them for their full lifetime. Desktop and mobile both call server-side logout (best effort).</li>
+<li><strong>Mobile Refresh Tokens</strong>: The mobile app now stores the rotating refresh token, transparently refreshes on <code>401</code>, and persists both rotated tokens — sessions survive past the 60-minute access-token lifetime instead of forcing hourly re-login.</li>
+<li><strong>Server Backup Status</strong>: Server Info now shows automatic VPS backup, real restore, and restore-test status reported by the API health endpoint.</li>
+<li><strong>Server Restore Script</strong>: Added guarded <code>scripts/restore.sh</code> for VPS/server administrators to restore local or cloud backups, including full ZIP archives with database and attachment files.</li>
+<li><strong>Re-installation Detection</strong>: VPS provisioning script detects existing <code>.env</code> and reuses domain, email, database name, user, and password without prompting. Suppresses first-time endpoint and bootstrap instructions on reruns.</li>
+<li><strong>Server Update Checker</strong>: Daily cron checks the BenchVault repo for available updates and surfaces a notification in <strong>Server -&gt; Server Info</strong> when a newer commit is available.</li>
+</ul>
+<h3 id="changed_4">Changed</h3>
+<ul>
+<li><strong>Client Resilience</strong>: The desktop <code>ApiClient</code> now retries transient failures with backoff — connection errors are retried for any request (nothing reached the server), while timeouts and <code>502/503/504</code> responses are retried for reads (<code>GET</code>) only.</li>
+<li><strong>SQL-Side Pagination</strong>: Experiment and inventory listings now apply <code>limit</code>/<code>offset</code>/<code>search</code> in SQL instead of fetching every row and filtering in Python.</li>
+<li><strong>VPS Script Names</strong>: Renamed VPS provisioning and uninstall scripts to <code>benchvault-4.sh</code> and <code>benchvault-4-uninstall.sh</code>, and updated setup links for the <code>benchvault</code> repository name.</li>
+<li><strong>Server Info Dialog</strong>: Simplified backup and restore status rows to show concise status, date/time, and restored table count without verbose backup filenames.</li>
+<li><strong>Transcription Documentation</strong>: Clarified that the Transcription Pack and Whisper models are installed locally per desktop workstation, not on the VPS/API server.</li>
+</ul>
+<h3 id="removed">Removed</h3>
+<ul>
+<li><strong>Agent Harness Files</strong>: Removed obsolete root agent guidance files and the old <code>transcribe_helper.py</code> helper source; the transcription pack builder now generates its helper script inline.</li>
+</ul>
+<h3 id="fixed_2">Fixed</h3>
+<ul>
+<li><strong>50-Experiment Truncation</strong>: The desktop "all experiments" views silently showed only the first 50 experiments; the API-backed facade now pages through all results.</li>
+<li><strong>VPS Login Startup</strong>: Desktop skips localhost API auto-start when the remembered login server is a VPS/external URL, but starts the local API on demand if the user switches back to <code>localhost</code>.</li>
+<li><strong>VPS Client API Status</strong>: Desktop sessions connected to VPS/external APIs no longer show stale localhost API status in the status bar or Server Info.</li>
+</ul>
+<h3 id="security">Security</h3>
+<ul>
+<li><strong>DB Password Encrypted at Rest</strong>: The launcher-saved PostgreSQL password in <code>server_config.json</code> is now encrypted with the per-machine key (legacy plaintext configs migrate automatically on first load). Protects against casual exposure (file browsing, AppData backups, screenshots) — not against same-user malware.</li>
+<li><strong>Configurable CORS</strong>: API CORS origins are configurable via <code>BENCHVAULT_CORS_ORIGINS</code> and restricted on VPS deployments instead of allowing all origins.</li>
+<li><strong>Upload Validation</strong>: File uploads are validated by magic bytes (not just extension), and downloads send <code>X-Content-Type-Options: nosniff</code>.</li>
+<li><strong>API Docs Gating</strong>: Swagger/ReDoc are env-gated (<code>BENCHVAULT_ENABLE_API_DOCS</code>) and disabled on VPS deployments; fixed the dead docs URL printed by the provisioner.</li>
+<li><strong>nginx Hardening</strong>: VPS provisioning adds HSTS, <code>X-Frame-Options</code>, <code>nosniff</code>, and <code>Referrer-Policy</code> headers.</li>
+<li><strong>systemd Sandboxing</strong>: The <code>benchvault-api</code> service runs with <code>ProtectSystem=strict</code>, <code>NoNewPrivileges</code>, <code>PrivateTmp</code>, and scoped <code>ReadWritePaths</code>.</li>
+<li><strong>Encrypted Backups by Default</strong>: VPS provisioning generates a GPG key so default backups are encrypted (with a copy-the-key-off-box warning); the update-check cron now runs as the <code>benchvault</code> user instead of root; the DB password written to <code>.env</code> is validated and quoted.</li>
+<li><strong>Auth Hygiene</strong>: Expired <code>refresh_tokens</code>, <code>user_sessions</code>, <code>password_reset_tokens</code>, <code>login_attempts</code>, and <code>revoked_tokens</code> rows are pruned on successful login; removed the hardcoded test DB password fallback (tests now require <code>POSTGRES_PASSWORD</code>).</li>
+</ul>
+<hr />
+<h2 id="420-2026-06-11">[4.2.0] - 2026-06-11</h2>
+<p><strong>VPS Deployment, Registration Security, and Account Management</strong></p>
+<h3 id="added_5">Added</h3>
+<ul>
+<li><strong>Master User Creation</strong>: Master users can create regular accounts from the desktop app with generated temporary passwords.</li>
+<li><strong>Login Remember Option</strong>: Desktop login can remember the server URL and username without storing passwords.</li>
+<li><strong>VPS Clean Slate Uninstall</strong>: VPS uninstall tooling can remove BenchVault services, app files, nginx config, certificates, service users, runtime directories, and the configured database/user for a fresh redeploy.</li>
+</ul>
+<h3 id="changed_5">Changed</h3>
+<ul>
+<li><strong>Desktop Login</strong>: Removed the Register tab from the desktop login dialog; users must receive accounts from a Master user.</li>
+<li><strong>Password Policy</strong>: Standardized account and password-change minimum length to 8 characters.</li>
+<li><strong>Direct LAN Action</strong>: Hidden for VPS/remote API sessions where the desktop does not own the local API process.</li>
+<li><strong>VPS Provisioning</strong>: VPS installs server-only dependencies, shows pip progress, supports clean reruns on the app directory, and configures writable service runtime directories.</li>
+<li><strong>Agent Guidance</strong>: Expanded agent handoff files with the full project directory architecture and ignored local RPIV artifacts.</li>
+</ul>
+<h3 id="fixed_3">Fixed</h3>
+<ul>
+<li><strong>Legacy Attachment Downloads</strong>: API file downloads now serve valid older experiment attachments stored in legacy checkout attachment folders.</li>
+<li><strong>VPS Database Setup</strong>: PostgreSQL role password setup no longer fails during provisioning.</li>
+</ul>
+<h3 id="security_1">Security</h3>
+<ul>
+<li><strong>Registration Security</strong>: Public <code>POST /api/v1/auth/register</code> is now bootstrap-only for the first Master account; subsequent account creation requires an authenticated Master user.</li>
+</ul>
+<hr />
+<h2 id="411-2026-06-09">[4.1.1] - 2026-06-09</h2>
+<p><strong>API Access Mode Clarification</strong></p>
+<h3 id="changed_6">Changed</h3>
+<ul>
+<li><strong>Direct LAN Access</strong>: Renamed the desktop LAN exposure control to <strong>Allow Direct LAN Access</strong> to distinguish same-network access from ngrok/tunnel and VPS access.</li>
+<li><strong>API Access Documentation</strong>: Clarified local/tunnel, direct-LAN, and VPS API connection modes across user, installation, and mobile setup docs.</li>
+</ul>
+<h3 id="fixed_4">Fixed</h3>
+<ul>
+<li><strong>API Bind Mode Control</strong>: Desktop local API now stays on one port (<code>8000</code>) and safely switches between local/tunnel bind mode (<code>127.0.0.1</code>) and direct-LAN bind mode (<code>0.0.0.0</code>) without introducing a second mobile port.</li>
+<li><strong>API Session Stability</strong>: Desktop-spawned API processes no longer receive ephemeral JWT secrets, so API rebind/restart uses the persistent server key instead of invalidating sessions unnecessarily.</li>
+</ul>
+<hr />
+<h2 id="410-2026-06-02">[4.1.0] - 2026-06-02</h2>
+<p><strong>Security Hardening and API-Only Architecture Migration</strong></p>
+<h3 id="added_6">Added</h3>
+<ul>
+<li><strong>API-Only Desktop</strong>: Desktop always connects through the BenchVault API server; no more direct PostgreSQL connections from GUI code.</li>
+<li><strong>API Auto-Start</strong>: When using <code>localhost</code>, the desktop automatically starts the API server as a subprocess before the login dialog appears.</li>
+<li><strong>AI Usage Tracking API</strong> (<code>GET /api/v1/ai/usage/current</code>, <code>POST /api/v1/ai/usage</code>): per-user monthly token/cost tracking via API endpoints.</li>
+<li><strong>AI Tools API</strong> (<code>POST /api/v1/ai/tools/execute</code>): AI assistant tool execution runs server-side through a shared <code>utils/ai_tools.py</code> module.</li>
+<li><strong>Email Settings API</strong> (<code>GET/PUT /api/v1/settings/email/config</code>, <code>POST /api/v1/settings/email/test</code>): SMTP configuration and testing through the API.</li>
+<li><strong>Admin User Management API</strong> (<code>GET /api/v1/auth/users</code>, <code>POST /api/v1/auth/users/{id}/reset-password</code>): Master-only user list and password reset.</li>
+<li><strong>Calendar API</strong> (<code>/api/v1/calendar/month</code>, <code>/date</code>, <code>/range</code>): calendar events served through API for Remote mode.</li>
+<li><strong>Password Change API</strong> (<code>POST /api/v1/auth/me/change-password</code>): self-service password change with old-password verification.</li>
+</ul>
+<h3 id="changed_7">Changed</h3>
+<ul>
+<li><strong>Login Flow</strong>: Removed Local/Remote mode radio buttons; login dialog now only asks for server URL (default <code>http://localhost:8000</code>) + credentials.</li>
+<li><strong>Desktop Data Access</strong>: All GUI windows and dialogs now call <code>api_client/*</code> modules through the <code>RemoteDatabaseManager</code> facade; zero <code>get_connection()</code> / <code>return_connection()</code> calls remain in desktop code.</li>
+<li><strong>Cloud Backup Dialog</strong>: Now exclusively uses API endpoints for test/save/load/trigger; removed local backup worker.</li>
+<li><strong>Advanced Search</strong>: Always routes through <code>db_manager.advanced_search()</code> (API-backed); removed raw SQL fallback helpers from dialog.</li>
+<li><strong>Email Settings Dialog</strong>: Load/save/test now use API endpoints; removed raw <code>EmailSettings</code> table access from desktop.</li>
+<li><strong>Password Reset Dialog</strong>: User list fetched via API, password reset issued through API endpoint; removed desktop-side bcrypt hashing.</li>
+<li><strong>AI Chat Dialog</strong>: Tool execution routes through <code>api_client.ai.execute_tool()</code>; usage/budget tracking uses API endpoints.</li>
+<li><strong>Project Menu</strong>: Renamed to Server menu; removed Switch Project / Delete Project actions.</li>
+<li><strong>Server Info Dialog</strong>: Now shows API server connection details instead of local database/project info; removed local backup status.</li>
+<li><strong>Database Maintenance</strong>: Orphan file cleanup and restore-time Master password reset replaced with server-side guidance messages.</li>
+<li><strong>Menu Bar</strong>: Removed Backup Database / Restore Database; those operations now run server-side only.</li>
+<li><strong>API Server Start</strong>: Now reads database config from <code>API_DB_*</code>/<code>POSTGRES_*</code> environment variables instead of local project config.</li>
+<li><strong>User Management</strong>: <code>get_all_users()</code> on the remote facade now fetches via API endpoint, supporting admin dialogs.</li>
+<li><strong>VPS Provisioning</strong>: Provision script supports both interactive download-and-run setup and non-interactive <code>curl | bash</code> flags for automation.</li>
+<li><strong>Setup Wizard</strong>: Windows launcher now saves PostgreSQL/API database configuration for local API auto-start.</li>
+<li><strong>Windows Packaging</strong>: One installer now supports server PCs, single-PC installs, and client workstations through the API-only login flow.</li>
+</ul>
+<h3 id="removed_1">Removed</h3>
+<ul>
+<li><strong>Local Mode</strong>: Desktop no longer connects directly to PostgreSQL; <code>DatabaseManager</code> import removed from desktop startup.</li>
+<li><strong>Project/Database Selection</strong>: No more project selector on startup; no more local database configuration in desktop flow.</li>
+<li><strong><code>BenchVault_CLIENT_MODE</code></strong> environment variable: menu split between Switch Project and Reconfigure Server no longer needed.</li>
+<li><strong>Local Backup/Restore</strong> menu actions: these operations now run on the API server.</li>
+<li><strong>Raw DB access in GUI</strong>: All <code>get_connection()</code>, <code>return_connection()</code>, <code>db_manager.transaction()</code> calls removed from desktop code.</li>
+<li><strong>bcrypt in desktop</strong>: Password hashing now only happens server-side; removed desktop-side bcrypt usage.</li>
+<li><strong>Client-only installer path</strong>: Removed the duplicate client PyInstaller spec and Inno Setup script now that all desktop installs use the same API-only application.</li>
+</ul>
+<h3 id="fixed_5">Fixed</h3>
+<ul>
+<li>Double login-failed dialog when API returns an error (Qt signal guard + QTimer reset).</li>
+<li><code>RemoteDatabaseManager.get_app_setting_bool()</code> now catches API errors and returns the default value.</li>
+<li>Settings router static <code>/ai/models</code> and <code>/email/config</code> routes ordered before dynamic <code>/{setting_key}</code> to avoid route conflicts.</li>
+<li>Token field name consistency: API response uses <code>token</code> (serialization alias from <code>access_token</code>) throughout login/register/refresh.</li>
+<li><code>get_all_users()</code> on remote facade returns full user list instead of only the current user.</li>
+<li>API client <code>login()</code> and <code>register()</code> correctly set <code>ApiClient.base_url</code> before making requests.</li>
+<li>Login rate limiting only counts failed attempts and clears after successful login.</li>
+<li>Access-token <code>expires_in</code> now matches the configured server expiration.</li>
+<li>Refresh-token rotation is atomic, and session revocation invalidates linked refresh tokens.</li>
+<li>File uploads clean up orphaned files if database registration fails.</li>
+<li>API clients send multipart metadata correctly for file/photo/voice uploads.</li>
+</ul>
+<h3 id="security_2">Security</h3>
+<ul>
+<li>Master-only settings endpoints prevent regular users from reading or changing sensitive application settings.</li>
+<li>Experiment and file mutations now enforce owner-or-Master authorization.</li>
+<li>Audit log, dashboard stats, and user statistics endpoints now require Master access.</li>
+<li>First-user registration uses a database advisory lock to prevent duplicate Master creation races.</li>
+<li>VPS gunicorn socket permissions allow nginx access without overexposing the service.</li>
+<li>VPS database password handling, backup authentication, and restore-test privileges are hardened.</li>
+</ul>
+<h3 id="breaking-upgrade-notes">Breaking / Upgrade Notes</h3>
+<ul>
+<li>Desktop clients now connect to a BenchVault API server URL instead of directly connecting to PostgreSQL.</li>
+<li>Local backup/restore actions moved out of the desktop client; run backups on the server or through Cloud Backup.</li>
+</ul>
+<hr />
+<h2 id="401-2026-05-15">[4.0.1] - 2026-05-15</h2>
+<p><strong>Bug Fixes</strong></p>
+<h3 id="fixed_6">Fixed</h3>
+<ul>
+<li><strong><code>packaging/</code> directory conflict</strong>: renamed to <code>deploy/</code> to avoid shadowing Python's <code>packaging</code> library, which broke matplotlib imports (statistics module)</li>
+<li><strong>Email notification logging</strong>: <code>send_equipment_notification()</code> and <code>send_critical_inventory_alert()</code> now return proper success/failure counts; console output no longer claims "email sent" when no email was actually delivered</li>
+<li><strong>Email failure visibility</strong>: key failure points (missing SMTP settings, undecryptable password) logged at <code>WARNING</code> instead of <code>DEBUG</code> level</li>
+<li><strong><code>.planning/</code> directory</strong>: removed 25 tracked planning files from repository (now fully gitignored)</li>
+</ul>
+<h3 id="changed_8">Changed</h3>
+<ul>
+<li><code>send_equipment_notification()</code> returns <code>(sent_count, total_count)</code> tuple</li>
+<li><code>send_critical_inventory_alert()</code> returns <code>bool</code></li>
+<li>Build/release skills and test paths updated for <code>packaging/</code> → <code>deploy/</code> rename</li>
+<li><strong>Documentation</strong>: all docs updated to v4.0.1 with platform-aware file paths, fixed broken links, expanded Linux guide, consistent XDG data locations</li>
+</ul>
+<hr />
+<h2 id="400-2026-05-15">[4.0.0] - 2026-05-15</h2>
+<p><strong>Linux Readiness and Platform-Agnostic Runtime</strong></p>
+<h3 id="added_7">Added</h3>
+<ul>
+<li><strong>Platform Paths Utility</strong> (<code>utils/platform_paths.py</code>): unified XDG (Linux) and AppData (Windows) filesystem paths</li>
+<li><strong>Platform Runtime Utility</strong> (<code>utils/platform_runtime.py</code>): executable naming, file opening, process tree cleanup</li>
+<li><strong>Linux PyInstaller Specs</strong> (<code>build_linux_desktop.spec</code>, <code>build_linux_api_server.spec</code>)</li>
+<li><strong>Platform-Aware Build Verification</strong>: <code>build_all.py</code> selects correct specs per OS, skips Windows-only artifacts on Linux</li>
+<li><strong>Linux Installation Guide</strong> (<code>LINUX_INSTALLATION_GUIDE.md</code>): source-run setup, PostgreSQL service, data locations</li>
+<li><strong>New Tests</strong>: 32 platform-path, runtime, backup-path, and build-config tests (74 total test suite)</li>
+</ul>
+<h3 id="changed_9">Changed</h3>
+<ul>
+<li><strong>Desktop/API Paths</strong>: migrated config, log, backup, email, and attachment directories to <code>platform_paths</code></li>
+<li><strong>Runtime</strong>: consolidated <code>os.startfile</code>/<code>open</code>/<code>xdg-open</code> into <code>platform_runtime.open_file()</code></li>
+<li><strong>API Server Process</strong>: uses platform-aware subprocess flags and process-group termination</li>
+<li><strong>Transcription Pack</strong>: platform-aware layout detection (Windows <code>.exe</code> vs Linux non-<code>.exe</code>)</li>
+<li><strong>Experiments/Samples Tables</strong>: ordered by ID descending instead of last-modified/date-created</li>
+<li><strong>Build Files</strong>: hidden imports for <code>openai</code>, <code>qrcode</code>, <code>reportlab</code>, <code>PIL</code>; corrected API spec (<code>jwt</code>, <code>multipart</code>); <code>analysis_files</code> directory added to installer</li>
+<li><strong>Documentation</strong>: Linux paths added to admin guide, API guide, and agents reference</li>
+</ul>
+<h3 id="fixed_7">Fixed</h3>
+<ul>
+<li>Backup attachment resolution preserves folder specificity (analysis files prefer <code>analysis_files/</code>)</li>
+<li>API legacy attachment paths remain reachable via compatibility containment</li>
+<li>Legacy config files continue to be discoverable via migration helper</li>
+<li>Transcription pack layout matches existing builder layout</li>
+</ul>
+<hr />
+<h2 id="360-2026-05-14">[3.6.0] - 2026-05-14</h2>
+<p><strong>Refactor and Audit Update</strong></p>
+<h3 id="added_8">Added</h3>
+<ul>
+<li><strong>Test Suite</strong>: 177 tests covering API endpoints, validation, DB/integration, transaction context, and inventory consumption auditing via pytest</li>
+<li><strong>Cross-Platform Linux Support</strong>: PostgreSQL detection via <code>systemctl</code>/<code>pg_isready</code></li>
+<li><strong>Connection Context Manager</strong>: <code>db_manager.transaction()</code> for auto-commit/rollback</li>
+<li><strong>BaseManager</strong>: Shared <code>_transaction()</code> context manager for all domain managers</li>
+<li><strong>Custom Exceptions</strong>: <code>DatabaseError</code>, <code>DatabaseOperationError</code>, <code>EntityNotFoundError</code>, <code>DuplicateEntityError</code>, <code>SchemaIntegrityError</code>, <code>PermissionDeniedError</code>, <code>ValidationError</code></li>
+<li><strong>Request Logging Middleware</strong>: API server logs method, path, status, response time</li>
+<li><strong>Audit Logging</strong> for 7 additional delete operations</li>
+<li><strong>API Exception Handlers</strong>: 5 custom exception → HTTP status code mappings (404, 409, 403, 422, 500)</li>
+<li><strong>Per-Test DB Cleanup</strong>: <code>cleanup_db</code> autouse fixture truncates data tables after each test</li>
+<li><strong>Inventory Consumption Audit</strong>: Structured audit details for inventory deductions, restores, manual edits, and experiment delete policy choices</li>
+</ul>
+<h3 id="changed_10">Changed</h3>
+<ul>
+<li><strong>DB Layer Split</strong>: <code>db_manager.py</code> 3,821 → 1,473 lines (-61%) via 10 domain managers (Audit, User, Template, Tag, Sample, Equipment, Inventory, Experiment, Settings, Calendar)</li>
+<li><strong>BaseManager Adoption</strong>: All 10 managers extend BaseManager and use <code>_transaction()</code> context manager</li>
+<li><strong>API Server</strong>: Photo/voice upload deduplicated; <code>init_db_manager()</code> for testability</li>
+<li><strong>Error Handling</strong>: 16 bare <code>except:</code> clauses → specific types + logging</li>
+<li><strong>Thread Safety</strong>: <code>TranscriptionThread</code> moved to module level</li>
+<li><strong>Logging</strong>: <code>print()</code> → <code>logger.error()</code> in <code>dashboard_charts.py</code></li>
+<li><strong>Samples Management</strong>: Actions column sizing is fixed so QR and analysis actions remain readable without squeezing tags</li>
+</ul>
+<h3 id="fixed_8">Fixed</h3>
+<ul>
+<li><code>jwt.JWTError</code> → <code>jwt.exceptions.PyJWTError</code> (system PyJWT compatibility)</li>
+<li><code>DatabaseManager.__del__</code> crash on init failure</li>
+<li><strong>settings_manager.py</strong>: <code>delete_ai_model</code> used wrong column name <code>ModelName</code> instead of <code>DisplayName</code></li>
+<li><strong>audit_manager.py</strong>: <code>log_audit_action</code> had manual <code>conn.rollback()</code> inside <code>_transaction()</code> context manager</li>
+<li><strong>settings_manager.py</strong>: <code>set_app_setting</code> had manual <code>conn.rollback()</code> inside <code>_transaction()</code> context manager</li>
+<li><strong>audit_manager.py</strong>: Missing <code>import psycopg2</code> for <code>psycopg2.Error</code> usage</li>
+<li><strong>base_manager.py</strong>: Added <code>UniqueViolation</code> → <code>DuplicateEntityError</code> auto-wrapping</li>
+<li><strong>Sample QR Labels</strong>: Restored malformed QR scanner dialog class so the sample QR button opens correctly</li>
+</ul>
+<hr />
+<h2 id="350-2026-04-14">[3.5.0] - 2026-04-14</h2>
+<p><strong>OpenRouter API Support</strong></p>
+<h3 id="added_9">Added</h3>
+<ul>
+<li>Multi-provider AI Assistant: choose between Anthropic (Claude) and OpenRouter</li>
+<li>OpenRouter adapter using OpenAI-compatible SDK with automatic tool format conversion</li>
+<li>Provider radio buttons and separate API key fields in Application Settings</li>
+<li>Provider and Supports Tools columns on the AI Models table</li>
+<li>Master users can add any OpenRouter-supported model by typing the model ID</li>
+<li><code>openai</code> package added to requirements</li>
+</ul>
+<h3 id="changed_11">Changed</h3>
+<ul>
+<li>Refactored <code>ChatWorker</code> to use provider adapters instead of direct Anthropic SDK calls</li>
+<li>Widened <code>AppSettings.SettingValue</code> column to <code>VARCHAR(500)</code> for encrypted keys</li>
+<li>Multi-file selection for sample analysis file uploads</li>
+</ul>
+<hr />
+<h2 id="341-2026-03-30">[3.4.1] - 2026-03-30</h2>
+<p><strong>Minor Fixes</strong></p>
+<h3 id="fixed_9">Fixed</h3>
+<ul>
+<li>Removed false "No Dependency Management File" concern from codebase analysis</li>
+<li>Updated planning state tracking for phase 2 preparation</li>
+</ul>
+<hr />
+<h2 id="340-2026-03-23">[3.4.0] - 2026-03-23</h2>
+<p><strong>Performance — Batch DB Queries</strong></p>
+<h3 id="changed_12">Changed</h3>
+<ul>
+<li><strong>Equipment Scheduler</strong>: Batch-fetch all week's reservations in one query instead of 7 (one per day)</li>
+<li><strong>Samples Window</strong>: Batch-fetch tags and analysis counts for all samples (2 queries instead of N×2)</li>
+<li><strong>Advanced Search</strong>: Batch tag filtering — one query for all results instead of one per result</li>
+<li><strong>Tag Sync</strong>: Batch INSERT/DELETE when syncing tags to linked samples (one query instead of N)</li>
+<li><strong>Tag Copy</strong>: <code>copy_experiment_tags_to_sample</code> now uses single INSERT...SELECT</li>
+<li><strong>Experiment Window</strong>: Batch-fetch inventory items for reactant amounts (one query instead of N)</li>
+<li><strong>Inventory</strong>: Removed per-call <code>information_schema</code> check in <code>get_inventory_creator</code></li>
+</ul>
+<h3 id="added_10">Added</h3>
+<ul>
+<li><code>get_reservations_for_date_range()</code> — batch reservation fetch for date ranges</li>
+<li><code>get_sample_tags_batch()</code> — batch tag fetch for multiple samples</li>
+<li><code>get_sample_analysis_counts_batch()</code> — batch analysis count for multiple samples</li>
+<li><code>get_inventory_items_batch()</code> — batch inventory item fetch by IDs</li>
+</ul>
+<hr />
+<h2 id="332-2026-03-20">[3.3.2] - 2026-03-20</h2>
+<p><strong>Security Hardening</strong></p>
+<h3 id="changed_13">Changed</h3>
+<ul>
+<li><strong>Database</strong>: Switched <code>SimpleConnectionPool</code> to <code>ThreadedConnectionPool</code> for thread safety</li>
+<li><strong>API</strong>: JWT secret now persisted to <code>AppData/Local/BenchVault/jwt_secret.key</code> — mobile tokens survive server restarts</li>
+<li><strong>API</strong>: Added in-memory rate limiting on login endpoint (5 attempts per 5 minutes per user)</li>
+<li><strong>API</strong>: Added file type allowlists for photo and voice upload endpoints</li>
+<li><strong>API</strong>: Sanitized all 500 error responses — details logged server-side, generic messages returned to clients</li>
+<li><strong>API</strong>: Added audit logging for all mutation endpoints (create/update/delete via mobile)</li>
+<li><strong>API</strong>: Validated offset/limit parameters — clamped negatives and enforced max bounds</li>
+<li><strong>API</strong>: Added path containment check on file-serving endpoint (defense-in-depth)</li>
+<li><strong>Security</strong>: Removed hardcoded <code>'postgres'</code> default password fallbacks in db_manager and backup_manager</li>
+</ul>
+<hr />
+<h2 id="331-2026-03-20">[3.3.1] - 2026-03-20</h2>
+<h3 id="fixed_10">Fixed</h3>
+<ul>
+<li><strong>UI</strong>: Fixed ampersand text display showing underscores in group boxes and buttons (Reactants &amp; Calculations, Procedure &amp; Observations, Generate &amp; Reset Password, etc.)</li>
+<li><strong>UI</strong>: Themed unthemed buttons across tag dialogs (Create, Delete, OK, Cancel, Close), experiment window (Download, Remove Tag, Manage All Tags), and keyboard shortcuts dialog (Close)</li>
+<li><strong>UI</strong>: Styled experiment parameter type dropdown with <code>combo_box_style()</code></li>
+<li><strong>UI</strong>: Keyboard shortcuts tables now use <code>table_style()</code> with alternating row colors</li>
+<li><strong>UI</strong>: Increased samples table row height for better readability</li>
+<li><strong>UI</strong>: Widened transcription model download buttons to fit text</li>
+</ul>
+<hr />
+<h2 id="330-2026-03-20">[3.3.0] - 2026-03-20</h2>
+<h3 id="changed_14">Changed</h3>
+<ul>
+<li><strong>Font</strong>: Switched app font from Arial to Segoe UI globally (theme, all dialogs, app-wide default via <code>QApplication.setFont()</code>)</li>
+<li><strong>UI</strong>: Fixed combo box dropdown text visibility — removed <code>background-color</code> from <code>combo_box_style()</code> that caused item text to be obscured on hover</li>
+<li><strong>UI</strong>: Removed individual cell hover highlighting from table style</li>
+<li><strong>UI</strong>: Themed Password Reset dialog (buttons, group box, combo box) and Audit Log filter combo boxes</li>
+</ul>
+<h3 id="fixed_11">Fixed</h3>
+<ul>
+<li><strong>Backup Restore</strong>: Fixed "no unique constraint matching given keys for referenced table users" error when restoring with "Keep Current Users" — the SQL filter now allows the users PRIMARY KEY constraint through (wrapped in <code>IF NOT EXISTS</code>) instead of blanket-skipping all <code>ALTER TABLE users</code> statements</li>
+</ul>
+<hr />
+<h2 id="323-2026-03-20">[3.2.3] - 2026-03-20</h2>
+<h3 id="changed_15">Changed</h3>
+<ul>
+<li><strong>UI</strong>: Login/Register tabs now use centralized <code>tab_widget_style()</code> matching experiment section tabs</li>
+<li><strong>UI</strong>: All data tables (inventory, templates, activity log, audit log, experiments list) now have <code>NoEditTriggers</code> — cells no longer appear hoverable or editable</li>
+<li><strong>UI</strong>: Experiments list table now has alternating row colors and consistent <code>table_style()</code></li>
+<li><strong>UI</strong>: Experiment parameters and reactants tables now have alternating row colors and <code>table_style()</code></li>
+<li><strong>UI</strong>: Samples table row height increased for better readability</li>
+<li><strong>UI</strong>: Application Settings dialog fully themed — group boxes, buttons (Add/Edit/Delete/Set Default), models table, API key input, Save/Cancel all use centralized theme</li>
+<li><strong>UI</strong>: Transcription Settings dialog fully themed — group boxes, download/reinstall buttons, OK/Cancel all use centralized theme</li>
+<li><strong>UI</strong>: Login, Register, and My Account dialog buttons use <code>action_button_style()</code> and <code>close_button_style()</code></li>
+<li><strong>UI</strong>: Inventory navigation button now grayed out (disabled) instead of hidden when inventory module is disabled, with tooltip explaining why</li>
+<li><strong>UI</strong>: Added <code>disabled_nav_button_style()</code> to theme system for grayed-out module buttons</li>
+</ul>
+<h2 id="322-2026-03-19">[3.2.2] - 2026-03-19</h2>
+<h3 id="changed_16">Changed</h3>
+<ul>
+<li><strong>UI</strong>: Centralized theme system (<code>styles/theme.py</code>) with consistent button styles, hover/disabled states, colors, and fonts across all windows and dialogs</li>
+<li><strong>UI</strong>: Samples table cells are no longer individually selectable or editable-looking (added <code>NoEditTriggers</code>)</li>
+<li><strong>UI</strong>: Removed Storage Location column from samples table and Add Sample dialog (redundant field)</li>
+<li><strong>UI</strong>: Applied theme to all remaining dialogs: project selector, cloud backup, reorder management, batch export, advanced search, templates, sample dialogs</li>
+<li><strong>UI</strong>: Tables in reorder management, templates, advanced search, and batch export now have alternating row colors</li>
+<li><strong>API</strong>: Removed <code>storage_location</code> from sample API responses (<code>/api/v1/sample/{id}</code>, <code>/api/v1/samples</code>)</li>
+</ul>
+<h2 id="321-2026-03-18">[3.2.1] - 2026-03-18</h2>
+<h3 id="fixed_12">Fixed</h3>
+<ul>
+<li><strong>Critical</strong>: <code>_filter_sql_preserve_users</code> regex now anchored to Users table only — was stripping FK constraints from unrelated tables during backup restore with "preserve users"</li>
+<li><strong>Security</strong>: AI file-read now uses <code>resolve_file_path()</code> + <code>realpath</code> validation (was rejecting valid absolute paths from DB)</li>
+<li><strong>Security</strong>: Cloud backup <code>app_password</code> (Koofr) now encrypted on disk alongside <code>password</code></li>
+<li><strong>Security</strong>: <code>update_last_backup()</code> no longer writes decrypted passwords to config file</li>
+<li><strong>Security</strong>: API upload endpoints sanitize filenames, enforce 50 MB size limit, no longer leak server paths in response</li>
+<li><strong>Security</strong>: <code>/api/v1/cloud/providers</code> now requires JWT authentication</li>
+<li><strong>Security</strong>: <code>analysis_dialogs.py</code> replaced <code>os.system()</code> with <code>subprocess.Popen()</code> (shell injection fix)</li>
+<li><strong>Security</strong>: Experiment file delete now checks ownership/Master permission</li>
+<li><strong>Backup</strong>: psql restore uses <code>ON_ERROR_STOP=1</code> to halt on errors</li>
+<li><strong>Backup</strong>: <code>_create_zip_archive</code> and <code>shutil.rmtree</code> cleanup use <code>_long_path()</code> for Windows long paths</li>
+<li><strong>Backup</strong>: <code>_get_referenced_files</code> connection properly closed in <code>finally</code> block</li>
+<li><strong>API</strong>: Reservation endpoint validates <code>start_time &lt; end_time</code></li>
+<li><strong>Database</strong>: <code>authenticate_user</code> now calls <code>conn.rollback()</code> on error</li>
+<li><strong>Database</strong>: Equipment and reservation audit log entries moved after successful delete</li>
+<li><strong>Database</strong>: <code>get_events_for_date</code> uses <code>CAST(... AS DATE)</code> for timestamp columns (was missing samples/analyses with time components)</li>
+<li><strong>Database</strong>: <code>update_experiment_parameter</code> uses <code>COALESCE</code> for value (no longer silently clears)</li>
+<li><strong>Database</strong>: Cursor moved inside <code>try</code> block in 12 methods (connection leak on cursor creation failure)</li>
+<li><strong>UI</strong>: Samples table now displays StorageLocation column; <code>get_all_samples</code>/<code>get_sample</code> SELECT it</li>
+<li><strong>UI</strong>: Tag filter combo uses <code>blockSignals()</code> during repopulation (prevents stale filter triggers)</li>
+<li><strong>UI</strong>: Inventory window and dashboard refresh timers stopped on close/exit</li>
+<li><strong>UI</strong>: Experiment duplicate chemical removal restores only the row's amount, not the total</li>
+<li><strong>UI</strong>: AI model edit preserves actual DB <code>sort_order</code> instead of using table row index</li>
+<li><strong>Equipment</strong>: Time format handling truncates <code>HH:MM:SS</code> to <code>HH:MM</code> for conflict detection</li>
+<li><strong>Equipment</strong>: <code>QuickReservationDialog</code> now performs conflict detection</li>
+<li><strong>Cloud</strong>: Empty file upload returns error instead of division by zero</li>
+<li><strong>Email</strong>: SMTP connection properly closed in <code>finally</code> block</li>
+<li><strong>Analysis</strong>: <code>analysis_files</code> directory uses <code>get_app_dir()</code> instead of CWD</li>
+<li><strong>Misc</strong>: Socket leak fixed in <code>get_local_ip()</code></li>
+</ul>
+<h2 id="320-2026-03-17">[3.2.0] - 2026-03-17</h2>
+<h3 id="added_11">Added</h3>
+<ul>
+<li><strong>AI Model Management UI</strong> — Master users can add, edit, delete, and set default AI models in Application Settings</li>
+<li><strong>Orphan File Cleanup</strong> — Database Maintenance now includes "Clean Up Orphan Files" to find and remove unreferenced files from disk</li>
+<li><strong>Smart Backup</strong> — Backup only includes files referenced in the database, skipping orphan files</li>
+<li><strong>Storage Location</strong> field in Add Sample dialog</li>
+<li><strong>Tag Search</strong> and <strong>Parameter Search</strong> tools for AI Assistant (12 total database query tools)</li>
+</ul>
+<h3 id="fixed_13">Fixed</h3>
+<ul>
+<li><strong>Security</strong>: JWT secret now random if env var not set (no hardcoded fallback), CORS credentials disabled with wildcard origins, <code>/api/v1/info</code> requires authentication and no longer exposes host/port, file upload endpoints enforce ownership checks, zip slip protection in backup restore and transcription pack, command injection fix (<code>os.system</code> → <code>subprocess.Popen</code>)</li>
+<li><strong>Security</strong>: API path traversal in <code>/canvaskit/</code> and <code>/icons/</code> endpoints, hardcoded Fernet encryption key replaced with random persistent key, mobile auth bypass on expired JWT tokens</li>
+<li><strong>Data integrity</strong>: Audit log entries now created after successful delete (prevents phantom entries on failure)</li>
+<li><strong>AI Assistant</strong>: Fixed model IDs (Sonnet/Opus 404 errors), fixed Reactants query column names, DB-configurable models via <code>AIModels</code> table</li>
+<li><strong>Backup</strong>: Windows MAX_PATH (260-char) failure on long filenames — <code>\\?\</code> prefix on all file operations</li>
+<li><strong>Inventory</strong>: <code>SELECT *</code> replaced with explicit column list matching table widget</li>
+<li><strong>Samples</strong>: Creation timestamp now includes time component (was showing 00:00:00)</li>
+<li><strong>Mobile</strong>: <code>_handleError</code> jsonDecode wrapped in try-catch, reservation time validation (end &gt; start), Dismissible waits for API before removing item, sample list shows parent experiment title</li>
+<li><strong>Mobile</strong>: Equipment scheduler 11PM crash fixed, QR dialog IndexError fixed</li>
+<li><strong>FileManager</strong>: Paths now absolute via <code>get_app_dir()</code>, API upload paths use absolute directory</li>
+</ul>
+<hr />
+<h2 id="310-2026-03-09">[3.1.0] - 2026-03-09</h2>
+<h3 id="added_12">Added</h3>
+<ul>
+<li><strong>AI Assistant</strong> — Chat dialog with Claude API integration (Tools &gt; AI Assistant, Ctrl+Shift+A)</li>
+<li>DB-configurable AI models via <code>AIModels</code> table — Master users can add/edit/remove models in App Settings</li>
+<li>Default models: Haiku (<code>claude-haiku-4-5-20251001</code>), Sonnet (<code>claude-sonnet-4-6</code>), Opus (<code>claude-opus-4-6</code>)</li>
+<li>12 read-only database query tools including new <code>search_by_tag</code> and <code>search_experiment_parameters</code></li>
+<li>Secure system prompt with anti-injection protection; all DB access via parameterized SELECT queries only</li>
+<li>Per-user monthly token budget tracking with <code>AIUsage</code> database table</li>
+<li>Master-configurable API key (Fernet-encrypted in DB) and monthly budget in Application Settings</li>
+<li>Markdown-to-HTML rendering for AI responses (bold, italic, headers, lists, code blocks)</li>
+<li>API key resolution: <code>ANTHROPIC_API_KEY</code> env var first, then DB-stored key</li>
+<li>Added <code>anthropic</code> package to requirements.txt</li>
+<li><strong>Orphan file cleanup</strong> in Database Maintenance (Tools &gt; Database Maintenance &gt; Clean Up Orphan Files)</li>
+<li><strong>Smart backup</strong> — only backs up files referenced in database (orphan files on disk are skipped)</li>
+</ul>
+<h3 id="fixed_14">Fixed</h3>
+<ul>
+<li>AI model IDs corrected: Sonnet → <code>claude-sonnet-4-6</code>, Opus → <code>claude-opus-4-6</code> (was causing 404 errors)</li>
+<li>AI Reactants query used wrong column names (<code>InventoryItemID</code>/<code>Type</code>/<code>Mass</code>/<code>Volume</code> → <code>ItemID</code>/<code>Category</code>/<code>MassToWeigh</code>/<code>CalculatedVolume</code>)</li>
+<li>Windows backup failure on long filenames — <code>\\?\</code> prefix applied to all file copy operations (MAX_PATH bypass)</li>
+<li>API path traversal vulnerability in <code>/canvaskit/</code> and <code>/icons/</code> endpoints</li>
+<li>Hardcoded Fernet encryption key replaced with random persistent key (<code>AppData/Local/BenchVault/encryption.key</code>)</li>
+<li>Mobile app auth bypass on expired JWT tokens (added API health check on startup)</li>
+<li>SQL injection in <code>change_postgres_password.py</code></li>
+<li>Sample creation timestamp showing <code>00:00:00</code> (missing time in strftime format)</li>
+<li>Mobile equipment scheduler crash at 11PM (<code>TimeOfDay.now().hour + 1</code> overflow → modulo 24)</li>
+<li>QR dialog <code>display_sample_info</code> IndexError (wrong tuple index for 6-element result)</li>
+</ul>
+<hr />
+<h2 id="3010-2026-02-27">[3.0.10] - 2026-02-27</h2>
+<h3 id="fixed_15">Fixed</h3>
+<ul>
+<li><strong>High: Broken INTERVAL SQL syntax</strong> in audit log cleanup and activity trends — <code>INTERVAL '%s days'</code> produced invalid PostgreSQL (extra quoting from psycopg2). Changed to <code>%s * INTERVAL '1 day'</code> across all 5 occurrences.</li>
+<li><strong>High: API experiment edit missing authorization</strong> — <code>PUT /api/v1/experiment/{id}</code> allowed any authenticated mobile user to overwrite any experiment's procedure notes. Added ownership + Master role check.</li>
+<li><strong>High: JWT secret key hardcoded default</strong> — API server used the well-known string <code>"your-secret-key-CHANGE-THIS-IN-PRODUCTION"</code> when <code>JWT_SECRET_KEY</code> was not set. Desktop app now generates a random 32-byte secret on each API server start.</li>
+<li><strong>Medium: SQL injection vector in email preferences</strong> — <code>get_users_with_preference()</code> used an f-string to insert the preference column name. Added allowlist validation.</li>
+<li><strong>Medium: Cloud backup credentials stored in plaintext</strong> — Passwords now encrypted with Fernet (same mechanism as SMTP passwords) on save and decrypted on load. Backwards-compatible with existing unencrypted configs.</li>
+<li><strong>Medium: Cloud backup upload loaded entire file into memory</strong> — Replaced <code>b''.join(chunks)</code> with a streaming generator that yields 1 MB chunks directly to <code>requests.put()</code>.</li>
+<li><strong>Low: About dialog showed stale "v3.0.0"</strong> — Now reads <code>QApplication.applicationVersion()</code> dynamically.</li>
+<li><strong>Low: API create_reservation error after commit masked success</strong> — Equipment name lookup moved before <code>conn.commit()</code> so failures trigger a proper rollback.</li>
+<li><strong>Low: Experiment window references accumulated without cleanup</strong> — Added <code>_cleanup_closed_experiment_windows()</code> that filters out non-visible windows before opening new ones.</li>
+</ul>
+<hr />
+<h2 id="309-2026-02-27">[3.0.9] - 2026-02-27</h2>
+<h3 id="fixed_16">Fixed</h3>
+<ul>
+<li><strong>Critical: Inventory deduction unit mismatch on experiment re-save</strong>: <code>original_reactant_amounts</code> stored raw <code>MassToWeigh</code> (grams/mL) but the deduction calculation converted to inventory units (kg, L, etc.). Re-saving an experiment with non-base-unit inventory items corrupted quantities (e.g. 1g from a kg-tracked item would add ~1 kg back on re-save). Fixed by building original amounts through the same unit conversion path used at save time.</li>
+<li><strong>Calendar overlap logic incomplete</strong>: Short reservations fully contained within a 1-hour time slot (e.g. 10:15–10:45 inside 10:00–11:00) were invisible on the calendar. Added a third overlap condition.</li>
+<li><strong>Inventory Excel export showed success on failure</strong>: <code>export_inventory()</code> returned <code>(False, error)</code> on failure but the caller never checked the return value. Now shows an error dialog when the export fails.</li>
+<li><strong>Export mislabelled LastModified as "Created At"</strong>: Column index 13 in <code>SELECT * FROM Inventory</code> is <code>LastModified</code>, not <code>CreatedAt</code>. Fixed the dictionary key and Excel header.</li>
+<li><strong>Low stock alerts empty on dashboard startup</strong>: <code>load_low_stock_alerts()</code> was not called during <code>__init__</code>, leaving the panel blank for the first 30 seconds until auto-refresh fired.</li>
+</ul>
+<hr />
+<h2 id="308-2026-02-26">[3.0.8] - 2026-02-26</h2>
+<h3 id="fixed_17">Fixed</h3>
+<ul>
+<li><strong>Inventory restore on experiment deletion (All Experiments window)</strong>: The "Delete Selected" button in the All Experiments list now shows the same three-button dialog as the experiment window — <em>Delete + Restore Inventory</em>, <em>Delete Only</em>, or <em>Cancel</em> — when auto-deduct is enabled and the experiment has deducted inventory amounts. Previously only the experiment window offered this dialog; the list window always deleted silently.</li>
+</ul>
+<hr />
+<h2 id="307-2026-02-26">[3.0.7] - 2026-02-26</h2>
+<h3 id="fixed_18">Fixed</h3>
+<ul>
+<li><strong>Inventory deletion blocked by templates</strong>: Deleting an inventory item that is referenced by an experiment template now raises a clear error listing the template names. Previously the item was silently unlinked from templates (same as experiments), which would have broken template reuse.</li>
+<li><strong>Deleted reactants visually indicated in experiments</strong>: When opening an experiment that contains a reactant whose inventory item was subsequently deleted, the row is now rendered in italic grey text with a grey background and the name suffixed with <code>[deleted]</code>. Previously these rows looked identical to normal reactants.</li>
+<li><strong>Deleted reactant save regression</strong>: On re-saving an experiment containing a deleted reactant, the row was silently dropped (empty ItemID string caused a <code>ValueError</code>). The save loop now parses an empty ItemID as <code>None</code> and preserves the row correctly. The <code>[deleted]</code> display suffix is stripped from <code>ChemicalName</code> before writing to the database.</li>
+</ul>
+<hr />
+<h2 id="306-2026-02-26">[3.0.6] - 2026-02-26</h2>
+<h3 id="fixed_19">Fixed</h3>
+<ul>
+<li><strong>Inventory deletion</strong>: Inventory items can now be deleted even when referenced by existing experiments. Previously, deleting such an item was blocked by a database foreign-key constraint. Now, <code>Reactants.ItemID</code> is made nullable via a migration, and the chemical name is stored as a snapshot (<code>ChemicalName</code> column) at the time the reactant is saved. On deletion, <code>ItemID</code> is nullified in <code>Reactants</code> and <code>TemplateReactants</code>; experiment history continues to display the original chemical name via <code>COALESCE(i.Name, r.ChemicalName, 'Deleted Item')</code>.</li>
+</ul>
+<hr />
+<h2 id="305-2026-02-25">[3.0.5] - 2026-02-25</h2>
+<h3 id="changed_17">Changed</h3>
+<ul>
+<li><strong>User Guide</strong>: Keyboard shortcuts table fully corrected (split into General / Navigation / In Dialogs sections matching the in-app help dialog; removed non-existent Ctrl+S, Ctrl+R, Ctrl+Q entries; added missing Ctrl+I, Ctrl+E, Ctrl+T, Ctrl+Shift+S, Ctrl+Shift+V).</li>
+<li><strong>User Guide</strong>: Added "Importing from Excel" section to Inventory module documenting the column mapping dialog, live preview, template download, and post-import warnings.</li>
+<li><strong>User Guide</strong>: Removed "Save frequently (Ctrl+S)" from Best Practices (shortcut does not exist).</li>
+<li><strong>Admin Guide</strong>: Corrected backup format description — backup is a <code>.zip</code> file containing the SQL dump, <code>experiment_files/</code>, <code>analysis_files/</code>, and <code>projects.json</code> (was incorrectly described as a <code>.sql</code> file).</li>
+<li><strong>Installation Guide</strong>: Completely rewrote Voice Transcription Setup section. Removed fictional "during installer" option; now documents Option A (Transcription Pack — self-contained portable Python + Whisper + FFmpeg, downloaded via Tools → Transcription Settings) and Option B (direct pip install for source/dev users). Updated troubleshooting to cover pack-specific errors.</li>
+<li><strong>BUILD_README.md</strong>: Removed from repository — v2.1.0-era file referencing portable PostgreSQL bundling and a service manager launcher that no longer exist.</li>
+</ul>
+<hr />
+<h2 id="304-2026-02-25">[3.0.4] - 2026-02-25</h2>
+<h3 id="fixed_20">Fixed</h3>
+<ul>
+<li><strong>Keyboard shortcuts help dialog</strong>: Removed further unimplemented entries: <code>Ctrl+S</code> "Save (when editing)" (never wired up in any window or dialog), <code>Enter</code> "Open selected item" in Lists (no key handler exists app-wide; item opening is done via buttons or double-click).</li>
+</ul>
+<hr />
+<h2 id="303-2026-02-25">[3.0.3] - 2026-02-25</h2>
+<h3 id="fixed_21">Fixed</h3>
+<ul>
+<li><strong>Keyboard shortcuts</strong>: Removed redundant <code>Ctrl+Q</code> shortcut — <code>quick_add_experiment()</code> was a stub that simply called <code>open_experiments()</code>, identical to <code>Ctrl+N</code>.</li>
+<li><strong>Keyboard shortcuts help dialog</strong>: Removed non-functional and redundant entries: <code>Ctrl+Q</code> (redundant with <code>Ctrl+N</code>), <code>Ctrl+M</code> (listed but no <code>QShortcut</code> existed for it), <code>Delete</code>, <code>Ctrl+A</code>, <code>Ctrl+C</code> from In Lists (none implemented), <code>Shift+Tab</code> from In Dialogs (non-functional).</li>
+<li><strong>Keyboard shortcuts help dialog</strong>: Added <code>Ctrl+Shift+V</code> to General section — the actual compact view shortcut was missing from the help dialog entirely.</li>
+<li><strong>Keyboard shortcuts help dialog</strong>: Corrected <code>Ctrl+N</code> label from "New experiment" to "Open experiments window".</li>
+</ul>
+<hr />
+<h2 id="302-2026-02-25">[3.0.2] - 2026-02-25</h2>
+<h3 id="added_13">Added</h3>
+<ul>
+<li><strong>Excel import for inventory</strong>: New teal "Import from Excel" button in the Inventory toolbar. Opens a dialog with a file browser, auto-detected column mapping via keyword matching, a live 5-row preview, and row-by-row import with per-row error collection.</li>
+<li><strong>Flexible column mapping</strong>: Headers from any <code>.xlsx</code> file are read and mapped to BenchVault inventory fields automatically; all mappings can be manually adjusted via dropdowns before importing.</li>
+<li><strong>Import template</strong>: "Download Template" button generates a ready-to-fill <code>.xlsx</code> with the standard BenchVault inventory column headers.</li>
+<li><strong>Import warnings</strong>: Items with no Units mapping are imported with <code>"?"</code> as a visible placeholder; items where both quantity fields resolve to zero are also flagged — all affected item names are listed in the post-import summary.</li>
+</ul>
+<h3 id="removed_2">Removed</h3>
+<ul>
+<li><strong>Reorder Management button</strong>: Removed from the Inventory toolbar (feature was non-functional). Underlying dialog code is preserved.</li>
+</ul>
+<hr />
+<h2 id="301-2026-02-24">[3.0.1] - 2026-02-24</h2>
+<h3 id="fixed_22">Fixed</h3>
+<ul>
+<li><strong>Config priority bug</strong>: <code>server_config.json</code> no longer overrides the database selected in the Project Selector. The selected project's database is now always used; <code>server_config.json</code> only provides host/port/user/password (for client mode / backward compatibility).</li>
+<li><strong>Solvent unit conversion</strong>: Solvent volumes entered in mL are now correctly converted to the inventory's stored unit (L, mL, µL) before checking availability and deducting stock.</li>
+<li><strong>Calculation summary</strong>: Stock solution volumes are now subtracted from the "Make up to final volume with solvent" line. Previously the full final volume was shown regardless of stock solution volumes already added.</li>
+<li><strong>Solvent volume precision</strong>: Solvent volume spinner now allows 4 decimal places (was 2).</li>
+<li><strong>Master password reset utility</strong>: Fixed last-project lookup comparing display name instead of database name; env var <code>POSTGRES_DB</code> no longer silently overrides <code>projects.json</code>; added multi-project selection.</li>
+<li><strong>PDF export — reactants table</strong>: Word wrap enabled, column widths widened, category labels shortened to prevent overflow.</li>
+<li><strong>PDF export — formatting overhaul</strong>: Improved layout, spacing, fonts, and overall visual consistency across all exported PDF sections.</li>
+<li><strong>PDF export — page header</strong>: Added running page header with experiment title, "Page X of Y" pagination, and creator name.</li>
+<li><strong>PDF export — Unicode rendering</strong>: Fixed characters such as <code>ć</code>, <code>ü</code>, <code>ñ</code> rendering as squares; switched to a Unicode-capable font.</li>
+<li><strong>PDF export — solvent subtraction</strong>: Stock solution volumes are now correctly subtracted from the "Make up to final volume" line in the calculation summary.</li>
+<li><strong>PDF export — stock solution reactants</strong>: Fixed stock solution reactants showing only target molarity instead of full calculated values.</li>
+<li><strong>My Account dialog</strong>: Removed duplicate "Weekly summary" checkbox that appeared twice in the notification preferences section.</li>
+</ul>
+<hr />
+<h2 id="300-2026-02-05">[3.0.0] - 2026-02-05</h2>
+<h3 id="major-feature-release-voice-transcription-application-settings-web-support">Major Feature Release - Voice Transcription, Application Settings &amp; Web Support</h3>
+<p>This release adds voice-to-text transcription, customizable application settings, Flutter web compatibility, audit log viewer, and Master user password recovery.</p>
+<h3 id="added_14">Added</h3>
+<h4 id="extended-file-type-support">Extended File Type Support</h4>
+<ul>
+<li><strong>Image formats</strong>: Added TIF, TIFF, WebP, ICO, SVG support</li>
+<li><strong>Document formats</strong>: Added ODT, ODP, ODS, ODC, ODG (OpenDocument), RTF, PPT, PPTX, XPS</li>
+<li><strong>Data formats</strong>: Added XML, JSON, TSV</li>
+<li><strong>Audio formats</strong>: Added OGG, FLAC, AAC, WMA</li>
+<li><strong>Video formats</strong>: Added MP4, AVI, MOV, MKV, WMV, WebM</li>
+<li><strong>Archive formats</strong>: Added TAR, GZ, BZ2</li>
+<li>Centralized file type detection in <code>FileManager.get_file_type()</code></li>
+<li>Unified file filter dialog via <code>FileManager.get_file_filter()</code></li>
+</ul>
+<h4 id="audit-log-viewer-new">Audit Log Viewer (New)</h4>
+<ul>
+<li><strong>Security audit log viewer</strong> (Tools -&gt; View Audit Log, Master only)</li>
+<li><strong>Filter by date range, action type, entity type, user</strong></li>
+<li><strong>Color-coded actions</strong>: DELETE (red), CREATE (green), UPDATE (blue)</li>
+<li><strong>Details panel</strong> for viewing full entry information</li>
+<li><strong>Export to CSV</strong> for compliance records</li>
+<li><strong>Database methods</strong>: Enhanced <code>get_audit_history()</code> with date/action filters</li>
+</ul>
+<h4 id="voice-to-text-transcription-optional">Voice-to-Text Transcription (Optional)</h4>
+<ul>
+<li><strong>OpenAI Whisper integration</strong> for transcribing audio recordings</li>
+<li><strong>Model selection</strong>: tiny (75MB), base (145MB), small (488MB), medium (1.5GB), large (3.1GB)</li>
+<li><strong>Transcription Settings Dialog</strong> (Tools menu) for model download and selection</li>
+<li><strong>Experiment window integration</strong>: Transcribe button on audio files</li>
+<li><strong>Output options</strong>: Insert into procedure notes or copy to clipboard</li>
+<li><strong>QThread-based processing</strong> for responsive UI during transcription</li>
+<li><strong>FFmpeg integration</strong> for audio format processing</li>
+<li><strong>Requirements</strong>: <code>openai-whisper</code>, <code>torch</code>, FFmpeg installed in PATH</li>
+</ul>
+<h4 id="application-settings-master-users">Application Settings (Master Users)</h4>
+<ul>
+<li><strong>Toggleable Inventory module</strong>: Enable/disable inventory for organizations that don't need it</li>
+<li><strong>Auto-deduct control</strong>: Toggle automatic inventory quantity deduction when creating experiments</li>
+<li><strong>Recent Activities toggle</strong>: Show/hide recent activities section on dashboard</li>
+<li><strong>Settings stored in database</strong>: AppSettings table with per-setting configuration</li>
+<li><strong>Instant effect</strong>: Settings apply immediately without app restart</li>
+</ul>
+<h4 id="advanced-tag-system">Advanced Tag System</h4>
+<ul>
+<li><strong>Boolean tag filtering</strong>: AND/OR/NOT logic in Advanced Search dialog</li>
+<li><strong>Tag inheritance sync</strong>: Experiment tags automatically sync to linked samples</li>
+<li><strong>Chip-based tag UI</strong>: Modern tag selection with autocomplete</li>
+<li><strong>Tag management</strong>: Add/remove tags with visual feedback</li>
+</ul>
+<h4 id="flutter-web-compatibility">Flutter Web Compatibility</h4>
+<ul>
+<li><strong>Web build support</strong>: Run mobile app in browser via <code>flutter build web</code></li>
+<li><strong>Platform-specific uploads</strong>: Browser FormData/XMLHttpRequest for web, http.MultipartRequest for mobile</li>
+<li><strong>Conditional imports</strong>: Automatic platform detection for dart:io availability</li>
+<li><strong>QR scanner fallback</strong>: Manual sample ID entry dialog for web (camera not supported)</li>
+<li><strong>API route fixes</strong>: Explicit routes for Flutter web static files (avoids mount conflicts)</li>
+</ul>
+<h4 id="password-reset-utility">Password Reset Utility</h4>
+<ul>
+<li><strong>Master user recovery</strong>: Command-line tool for resetting forgotten Master passwords</li>
+<li><strong>Database connection wizard</strong>: Prompts for PostgreSQL credentials</li>
+<li><strong>Secure password generation</strong>: Auto-generate or manually enter new password</li>
+<li><strong>Included in installer</strong>: Start Menu shortcut for "Password Reset Utility"</li>
+<li><strong>PyInstaller packaged</strong>: Single-file executable for .exe distributions</li>
+</ul>
+<h3 id="changed_18">Changed</h3>
+<ul>
+<li><strong>API server routing</strong>: Changed from catch-all StaticFiles mount to explicit routes for Flutter web files</li>
+<li><strong>AddReactantDialog</strong>: Fixed field visibility initialization when Final Volume is not set</li>
+<li><strong>Build system</strong>: Added <code>build_password_reset()</code> to build_all.py for password reset utility</li>
+<li><strong>Installer</strong>: Now includes Password Reset Utility with Start Menu shortcut</li>
+</ul>
+<h3 id="fixed_23">Fixed</h3>
+<ul>
+<li><strong>AddReactant dialog fields hidden incorrectly</strong>: Fields now properly initialize based on type selection</li>
+<li><strong>Web login "method not allowed"</strong>: API routes now explicitly defined before static file serving</li>
+<li><strong>Photo upload on mobile Chrome</strong>: Platform-specific upload helpers resolve MultipartFile dart:io errors</li>
+<li><strong>Grammar fix</strong>: "analysises" → "analyses" in Samples module</li>
+<li><strong>Inventory disabled inconsistency</strong>: Add Reactant now blocked when inventory module is disabled</li>
+<li><strong>Auto-deduct checkbox</strong>: Now grayed out when inventory module is disabled in settings</li>
+<li><strong>Password reset utility bug</strong>: Fixed undefined variables in database connection</li>
+<li><strong>OpenMP conflict</strong>: Fixed libiomp5md.dll conflict between NumPy/matplotlib and PyTorch/Whisper</li>
+</ul>
+<h3 id="files-added">Files Added</h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>utils/transcription.py</code></td>
+<td>Whisper transcription service</td>
+</tr>
+<tr>
+<td><code>dialogs/transcription_settings_dialog.py</code></td>
+<td>Model download and settings UI</td>
+</tr>
+<tr>
+<td><code>dialogs/app_settings_dialog.py</code></td>
+<td>Application settings for Master users</td>
+</tr>
+<tr>
+<td><code>dialogs/audit_log_dialog.py</code></td>
+<td>Audit log viewer for Master users</td>
+</tr>
+<tr>
+<td><code>reset_master_password.py</code></td>
+<td>Password reset command-line utility</td>
+</tr>
+<tr>
+<td><code>build_reset_password.spec</code></td>
+<td>PyInstaller spec for password reset</td>
+</tr>
+<tr>
+<td><code>ADMIN_GUIDE.md</code></td>
+<td>Administrator guide for Master users</td>
+</tr>
+<tr>
+<td><code>eln_mobile_app/lib/services/upload_helper_io.dart</code></td>
+<td>Mobile upload implementation</td>
+</tr>
+<tr>
+<td><code>eln_mobile_app/lib/services/upload_helper_web.dart</code></td>
+<td>Web upload implementation</td>
+</tr>
+<tr>
+<td><code>eln_mobile_app/lib/services/audio_helper_io.dart</code></td>
+<td>Mobile audio playback</td>
+</tr>
+<tr>
+<td><code>eln_mobile_app/lib/services/audio_helper_web.dart</code></td>
+<td>Web audio playback</td>
+</tr>
+</tbody>
+</table>
+<h3 id="documentation">Documentation</h3>
+<ul>
+<li>Updated CLAUDE.md with v3.0.0 features</li>
+<li>Updated installer.iss with password reset utility</li>
+<li>Consolidated documentation: README.md, INSTALLATION_GUIDE.md, USER_GUIDE.md, ADMIN_GUIDE.md</li>
+<li>Added comprehensive PostgreSQL network configuration instructions</li>
+<li>Added voice transcription setup guide</li>
+<li>Added audit log usage documentation</li>
+</ul>
+<hr />
+<h2 id="260-2026-01-26">[2.6.0] - 2026-01-26</h2>
+<h3 id="feature-release-cloud-backup-and-ux-improvements">Feature Release - Cloud Backup and UX Improvements</h3>
+<p>This release adds cloud backup functionality with support for multiple providers, along with several usability enhancements.</p>
+<h3 id="added_15">Added</h3>
+<h4 id="cloud-backup-system">Cloud Backup System</h4>
+<ul>
+<li><strong>Multi-provider cloud backup</strong> supporting 5 cloud storage services:</li>
+<li><strong>Koofr</strong> - European privacy-focused cloud storage</li>
+<li><strong>Nextcloud</strong> - Self-hosted cloud solution</li>
+<li><strong>pCloud</strong> - Swiss-based cloud storage</li>
+<li><strong>Box</strong> - Enterprise cloud storage</li>
+<li><strong>WebDAV</strong> - Generic WebDAV protocol support</li>
+<li><strong>Cloud Backup Dialog</strong> (File menu) with:</li>
+<li>Provider selection dropdown</li>
+<li>Dynamic credential fields based on provider</li>
+<li>Test Connection button for validation</li>
+<li>Save Configuration for credential persistence</li>
+<li>Backup Now for immediate backup</li>
+<li>Progress indicator during backup</li>
+<li><strong>Automatic backup file management</strong>:</li>
+<li>Creates timestamped backup files</li>
+<li>Uploads to configurable remote folder</li>
+<li>Tracks last backup time in configuration</li>
+<li><strong>New files</strong>:</li>
+<li><code>utils/cloud_backup.py</code> - Core backup module with provider abstraction</li>
+<li><code>dialogs/cloud_backup_dialog.py</code> - Desktop UI for cloud backup</li>
+</ul>
+<h4 id="enhanced-project-info">Enhanced Project Info</h4>
+<ul>
+<li><strong>Project statistics</strong>: Experiment, sample, inventory item, and user counts</li>
+<li><strong>Database size</strong>: Shows actual PostgreSQL database size</li>
+<li><strong>Backup status</strong>: Last local and cloud backup timestamps</li>
+<li><strong>API server status</strong>: Shows if API is running and on which port</li>
+</ul>
+<h4 id="user-experience-improvements">User Experience Improvements</h4>
+<ul>
+<li><strong>Keyboard shortcuts</strong> for common actions:</li>
+<li>Ctrl+N: New experiment</li>
+<li>Ctrl+S: Save current work</li>
+<li>Ctrl+F: Search/filter</li>
+<li>Ctrl+R: Refresh data</li>
+<li>F5: Refresh</li>
+<li>Ctrl+Q: Quit application</li>
+<li><strong>Navigation icons</strong> throughout the application for visual consistency</li>
+<li><strong>Smart forms</strong> with auto-fill and supplier suggestions in inventory</li>
+</ul>
+<h4 id="mobile-app-improvements">Mobile App Improvements</h4>
+<ul>
+<li><strong>Procedure editing</strong> in experiment detail view</li>
+<li>Fixed: PUT endpoint path for experiment updates</li>
+</ul>
+<h3 id="changed_19">Changed</h3>
+<ul>
+<li><strong>Project Info dialog</strong> now shows comprehensive project statistics</li>
+<li><strong>Menu structure</strong> updated with Cloud Backup option under File menu</li>
+<li><strong>requirements.txt</strong> now includes <code>requests&gt;=2.28.0</code> for WebDAV operations</li>
+</ul>
+<h3 id="fixed_24">Fixed</h3>
+<ul>
+<li><strong>Mobile app "Method not allowed" error</strong> when saving procedure edits</li>
+<li>Root cause: API endpoint mismatch (plural vs singular path)</li>
+<li>Fix: Changed <code>/api/v1/experiments/{id}</code> to <code>/api/v1/experiment/{id}</code> for PUT</li>
+</ul>
+<h3 id="api-changes">API Changes</h3>
+<p>New endpoints added to <code>api_server.py</code>:
+- <code>GET /api/v1/cloud/providers</code> - List available cloud providers
+- <code>POST /api/v1/cloud/test</code> - Test cloud connection
+- <code>POST /api/v1/cloud/config</code> - Save cloud configuration
+- <code>GET /api/v1/cloud/config</code> - Get cloud configuration
+- <code>POST /api/v1/cloud/backup</code> - Trigger cloud backup
+- <code>GET /api/v1/cloud/backups</code> - List cloud backups
+- <code>DELETE /api/v1/cloud/config</code> - Delete cloud configuration</p>
+<h3 id="files-modified">Files Modified</h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>utils/cloud_backup.py</code></td>
+<td>NEW - Cloud backup module</td>
+</tr>
+<tr>
+<td><code>dialogs/cloud_backup_dialog.py</code></td>
+<td>NEW - Cloud backup UI</td>
+</tr>
+<tr>
+<td><code>main.py</code></td>
+<td>Added cloud backup menu, enhanced project info</td>
+</tr>
+<tr>
+<td><code>api_server.py</code></td>
+<td>Added cloud backup endpoints, fixed PUT path</td>
+</tr>
+<tr>
+<td><code>requirements.txt</code></td>
+<td>Added requests library</td>
+</tr>
+</tbody>
+</table>
+<h3 id="documentation_1">Documentation</h3>
+<ul>
+<li>Updated CLAUDE.md with v2.6.0 features and cloud backup section</li>
+<li>Updated README.md with cloud backup information</li>
+<li>Updated CHANGELOG.md (this file)</li>
+<li>Created IMPROVEMENTS_v2.6.md with feature documentation</li>
+</ul>
+<hr />
+<h2 id="250-2026-01-15">[2.5.0] - 2026-01-15</h2>
+<h3 id="patch-release-api-server-process-management">Patch Release - API Server Process Management</h3>
+<h3 id="fixed_25">Fixed</h3>
+<ul>
+<li><strong>API server not stopping</strong> when app exits or checkbox unchecked</li>
+<li><strong>Process cleanup</strong> improved on Windows with taskkill</li>
+<li><strong>Documentation</strong> updated for accuracy</li>
+</ul>
+<hr />
+<h2 id="240-2025-12-10">[2.4.0] - 2025-12-10</h2>
+<h3 id="major-architectural-change-system-postgresql-installation">Major Architectural Change - System PostgreSQL Installation</h3>
+<p>This release represents a strategic shift from bundled portable PostgreSQL to system PostgreSQL installation. This change dramatically improves reliability and reduces installation complexity.</p>
+<h3 id="fixed_26">Fixed</h3>
+<h4 id="postgresql-service-detection-and-port-auto-detection-hotfix-1-final">PostgreSQL Service Detection and Port Auto-Detection (Hotfix #1 - Final)</h4>
+<ul>
+<li><strong>Issue</strong>: Setup wizard reports "PostgreSQL service not running" on fresh PC, or fails to create database when PostgreSQL runs on non-default port</li>
+<li><strong>Root cause</strong>:</li>
+<li>Initial fix only checked specific hardcoded service names (postgresql-x64-12 through postgresql-x64-16)</li>
+<li>Fresh PC may have PostgreSQL 17, 32-bit version, or different naming pattern</li>
+<li><strong>Critical</strong>: Fresh PC runs PostgreSQL on port 5433 (not 5432) when 5432 is occupied on network</li>
+<li>Database creation/check commands default to port 5432 and fail silently</li>
+<li><strong>Solution</strong>: Implemented comprehensive detection with port auto-discovery</li>
+<li><strong>Service Detection (3-tier)</strong>:<ul>
+<li>Method 1: Query ALL Windows services for any containing "postgresql" that is RUNNING</li>
+<li>Method 2: Check specific service names (PostgreSQL 12-17, x64/x86)</li>
+<li>Method 3: Socket check with 2-second timeout</li>
+</ul>
+</li>
+<li><strong>Port Auto-Detection (NEW)</strong>:<ul>
+<li>Added <code>detect_postgres_port()</code> method that checks ports 5432, 5433, 5434, 5435</li>
+<li>Updated <code>database_exists()</code> and <code>create_database()</code> to accept and use detected port</li>
+<li>All psql commands now use <code>-p PORT</code> parameter</li>
+</ul>
+</li>
+<li><strong>Impact</strong>: Setup wizard now works reliably regardless of PostgreSQL version, architecture, or port configuration</li>
+</ul>
+<h4 id="api-server-startup-error-handling-hotfix-2">API Server Startup Error Handling (Hotfix #2)</h4>
+<ul>
+<li><strong>Issue</strong>: API server crashes with exit code 1, but error message doesn't show the actual error</li>
+<li><strong>Root cause</strong>: Database connection errors not caught in api_server.py, no stderr capture in main.py</li>
+<li><strong>Solution</strong>:</li>
+<li>Added try-except block around DatabaseManager initialization in api_server.py</li>
+<li>Added detailed error logging showing database config (with password status, not value)</li>
+<li>Capture stdout/stderr from API server subprocess</li>
+<li>Display full error output in error dialog</li>
+<li>Show if API_DB_PASSWORD is SET or NOT SET (without exposing value)</li>
+<li><strong>Impact</strong>: API server connection errors now provide clear diagnostic information</li>
+</ul>
+<h4 id="api-server-unicode-encoding-error-hotfix-3">API Server Unicode Encoding Error (Hotfix #3)</h4>
+<ul>
+<li><strong>Issue</strong>: API server crashes immediately with <code>UnicodeEncodeError: 'charmap' codec can't encode character</code></li>
+<li><strong>Root cause</strong>: Emoji and Unicode characters (📡, ✓, ✗, ⚠, 🧪, 📁, 📊, 👤, 🏠) in print statements cannot be encoded by Windows cp1252 codec when running as subprocess</li>
+<li><strong>Solution</strong>: Replaced all Unicode characters with ASCII text markers in all print statements:</li>
+<li><code>api_server.py</code>: 📡 → [API], ✓ → [OK], ❌ → [ERROR]</li>
+<li><code>database/db_manager.py</code>: ✓ → [OK], ⚠ → [WARN]</li>
+<li><code>main.py</code>: ✓ → [OK], ⚠ → [WARN], 🧪 → [BenchVault], 📁 → [Project], etc.</li>
+<li><strong>Impact</strong>: API server and database initialization now work successfully on Windows without encoding errors</li>
+</ul>
+<h3 id="changed_20">Changed</h3>
+<h4 id="database-creation-removed-from-setup-wizard-design-improvement">Database Creation Removed from Setup Wizard (Design Improvement)</h4>
+<ul>
+<li><strong>Issue</strong>: Setup wizard hardcoded database name to 'lab_notebook', conflicting with BenchVault's multi-project flexibility</li>
+<li><strong>Problem</strong>: Users/organizations may want custom database names (e.g., "CompanyX_Research", "Chemistry_Lab")</li>
+<li><strong>Solution</strong>: Removed database creation from launcher entirely</li>
+<li>Launcher now only verifies PostgreSQL installation and service status</li>
+<li>Main application's existing ProjectSelectorDialog handles all database/project creation</li>
+<li>Users can choose any database name they want through the project creation interface</li>
+<li><strong>Impact</strong>: Maximum flexibility, no hardcoded names, cleaner separation of concerns</li>
+<li><strong>User Experience</strong>:
+  1. Launcher: Verifies PostgreSQL → "Setup complete! Click Launch"
+  2. Main app: Shows Project Selector → "Create New Project"
+  3. User: Enters project name, database name, description
+  4. System: Creates database through project system</li>
+<li><strong>Benefits</strong>:</li>
+<li>No hardcoded database names</li>
+<li>Consistent with BenchVault's multi-project architecture</li>
+<li>Launcher is simpler and more focused</li>
+<li>Full flexibility for naming first and subsequent databases</li>
+</ul>
+<h4 id="postgresql-password-change-tools-removed-simplification">PostgreSQL Password Change Tools Removed (Simplification)</h4>
+<ul>
+<li><strong>Rationale</strong>: Users set their own PostgreSQL password during PostgreSQL installation</li>
+<li><strong>Changes</strong>:</li>
+<li>Removed security reminder widget from launcher UI</li>
+<li>Removed <code>change_postgres_password.py</code> and <code>change_password.bat</code> from installer bundle</li>
+<li>No longer suggesting users change default 'postgres' password (they set their own during install)</li>
+<li><strong>Impact</strong>: Cleaner launcher UI, smaller installer, no unnecessary password reset utilities</li>
+<li><strong>Note</strong>: Users manage PostgreSQL passwords through standard PostgreSQL tools (pgAdmin, psql)</li>
+</ul>
+<h4 id="installation-architecture-breaking-change">Installation Architecture (BREAKING CHANGE)</h4>
+<ul>
+<li><strong>Removed portable PostgreSQL bundling</strong> from installer</li>
+<li>Installer size reduced from ~300MB to ~50MB (6x smaller!)</li>
+<li>Users now install PostgreSQL separately from https://www.postgresql.org/download/</li>
+<li>Industry-standard approach familiar to IT departments</li>
+<li>Better security patches and independent PostgreSQL updates</li>
+<li><strong>Launcher transformed to Setup Wizard</strong></li>
+<li>Detects system PostgreSQL via Windows Registry, PATH, and common paths</li>
+<li>Checks if PostgreSQL service is running (port 5432)</li>
+<li>Automatically creates <code>lab_notebook</code> database using psql</li>
+<li>Interactive guidance if PostgreSQL not found (with download link)</li>
+<li>Removed service management complexity (no more start/stop portable PostgreSQL)</li>
+</ul>
+<h4 id="core-benefits">Core Benefits</h4>
+<ul>
+<li><strong>More Reliable</strong>: Standard PostgreSQL installation = well-tested, documented, no portable permission issues</li>
+<li><strong>Easier Debugging</strong>: Standard paths, standard logs, users can use pgAdmin/psql directly</li>
+<li><strong>Smaller Installer</strong>: 50MB vs 300MB (faster download, faster installation)</li>
+<li><strong>Better Updates</strong>: User updates PostgreSQL independently with security patches</li>
+<li><strong>Professional</strong>: Industry-standard approach, easy integration into existing infrastructure</li>
+</ul>
+<h3 id="fixed_27">Fixed</h3>
+<h4 id="root-cause-resolution">Root Cause Resolution</h4>
+<ul>
+<li><strong>95% of bugs in v2.1-v2.3 were integration bugs, not application logic bugs</strong></li>
+<li>Path detection issues with portable PostgreSQL</li>
+<li>Permission problems with portable installation</li>
+<li>Password management complexity</li>
+<li>Service management complications</li>
+<li>Resource bundling with PyInstaller</li>
+<li><strong>Core BenchVault application is solid</strong> - removing problematic integration layer</li>
+</ul>
+<h3 id="added_16">Added</h3>
+<h4 id="postgresql-detection-system">PostgreSQL Detection System</h4>
+<ul>
+<li><strong>PostgreSQLDetector class</strong> with comprehensive detection methods:</li>
+<li><code>find_postgresql()</code>: Checks Windows Registry → PATH → common installation paths</li>
+<li><code>is_postgres_running()</code>: Verifies Windows service on port 5432</li>
+<li><code>database_exists()</code>: Queries with psql to check database</li>
+<li><code>create_database()</code>: Executes <code>CREATE DATABASE lab_notebook</code> automatically</li>
+<li><strong>Interactive setup wizard</strong> guides users through first-run configuration</li>
+<li><strong>Browser integration</strong> opens PostgreSQL download page if not found</li>
+<li><strong>Retry mechanism</strong> for detecting PostgreSQL after installation</li>
+</ul>
+<h3 id="documentation_2">Documentation</h3>
+<ul>
+<li><strong>ARCHITECTURE_CHANGE_v2.4.md</strong> - Comprehensive documentation of architectural change:</li>
+<li>Rationale and root cause analysis</li>
+<li>User experience comparison (old vs new)</li>
+<li>Technical implementation details</li>
+<li>Testing checklist (4 test scenarios)</li>
+<li>Migration guide for upgrading from v2.3</li>
+<li>Decision rationale and trade-offs</li>
+<li>Files modified and deployment instructions</li>
+</ul>
+<h3 id="migration-from-v23">Migration from v2.3</h3>
+<h4 id="for-users-with-portable-postgresql">For Users with Portable PostgreSQL:</h4>
+<ol>
+<li>Back up your data: Tools → Database Backup</li>
+<li>Install system PostgreSQL from postgresql.org</li>
+<li>Uninstall BenchVault v2.3</li>
+<li>Install BenchVault v2.4</li>
+<li>Launch Setup Wizard (auto-detects PostgreSQL)</li>
+<li>Restore backup: Tools → Restore from Backup</li>
+</ol>
+<h4 id="for-users-with-system-postgresql">For Users with System PostgreSQL:</h4>
+<ol>
+<li>Back up your data: Tools → Database Backup</li>
+<li>Uninstall BenchVault v2.3</li>
+<li>Install BenchVault v2.4</li>
+<li>Setup Wizard detects existing PostgreSQL</li>
+<li>Database preserved (or restored from backup)</li>
+</ol>
+<h3 id="installer-changes">Installer Changes</h3>
+<ul>
+<li><strong>Removed from installer.iss</strong>:</li>
+<li>All portable PostgreSQL files (~250MB)</li>
+<li>PostgreSQL data directory creation</li>
+<li>initdb and pg_ctl service management</li>
+<li>Portable-specific permissions configuration</li>
+<li><strong>Updated welcome message</strong>: Now mentions prerequisite "PostgreSQL 12+ must be installed separately"</li>
+<li><strong>Simplified installation flow</strong>: Desktop app + API server + Launcher only</li>
+</ul>
+<h3 id="files-modified_1">Files Modified</h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Change Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>launcher.py</code></td>
+<td>Complete rewrite - Setup wizard (PostgreSQL detection only, no database creation)</td>
+</tr>
+<tr>
+<td><code>installer.iss</code></td>
+<td>Simplified - Removed portable PostgreSQL</td>
+</tr>
+<tr>
+<td><code>README.md</code></td>
+<td>Version bump to 2.4.0</td>
+</tr>
+<tr>
+<td><code>CHANGELOG.md</code></td>
+<td>v2.4.0 release notes</td>
+</tr>
+<tr>
+<td><code>ARCHITECTURE_CHANGE_v2.4.md</code></td>
+<td>Architecture documentation</td>
+</tr>
+</tbody>
+</table>
+<h3 id="files-not-modified-still-work-fine">Files NOT Modified (Still Work Fine)</h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>main.py</code></td>
+<td>✅ No changes needed</td>
+</tr>
+<tr>
+<td><code>api_server.py</code></td>
+<td>✅ No changes needed</td>
+</tr>
+<tr>
+<td><code>database/db_manager.py</code></td>
+<td>✅ No changes needed</td>
+</tr>
+<tr>
+<td><code>utils/backup_manager.py</code></td>
+<td>✅ Already has system PostgreSQL support (v2.3)</td>
+</tr>
+<tr>
+<td><code>change_postgres_password.py</code></td>
+<td>✅ Already has system PostgreSQL support (v2.3)</td>
+</tr>
+<tr>
+<td>All <code>build_*.spec</code> files</td>
+<td>✅ No changes needed</td>
+</tr>
+</tbody>
+</table>
+<h3 id="known-limitations">Known Limitations</h3>
+<ul>
+<li><strong>Extra setup step required</strong>: Users must install PostgreSQL before BenchVault (guided by Setup Wizard)</li>
+<li><strong>Requires admin rights</strong>: PostgreSQL installation needs administrator privileges</li>
+<li><strong>User must remember password</strong>: Default 'postgres' password needed for setup (wizard handles this)</li>
+</ul>
+<h3 id="success-criteria">Success Criteria</h3>
+<p>✅ v2.4 is successful when:
+1. Setup wizard detects PostgreSQL correctly (Registry, PATH, common paths)
+2. Database created automatically without user intervention
+3. Desktop app launches without errors after setup
+4. Zero bugs related to PostgreSQL path detection
+5. Zero bugs related to portable PostgreSQL permissions
+6. Users report easier, more reliable installation experience
+7. Support requests decrease</p>
+<h3 id="trade-offs">Trade-offs</h3>
+<p><strong>What we gave up</strong>:
+- One-click all-in-one installer (now requires PostgreSQL first)
+- Self-contained portable installation</p>
+<p><strong>What we gained</strong>:
+- Dramatically more reliable (industry-standard PostgreSQL)
+- 6x smaller installer (50MB vs 300MB)
+- Easier debugging (standard paths and tools)
+- Better security (PostgreSQL updates independently)
+- Professional deployment approach
+- Eliminated 95% of integration bugs</p>
+<h3 id="conclusion">Conclusion</h3>
+<p><strong>v2.4 represents a strategic shift</strong> from "batteries included" (portable) to "best practice" (system installation).</p>
+<p>The core BenchVault application has always been solid. This architectural change removes the problematic integration layer and lets BenchVault shine. The slight increase in initial setup time is more than offset by the dramatic improvement in reliability and maintainability.</p>
+<hr />
+<h2 id="230-2025-12-09">[2.3.0] - 2025-12-09</h2>
+<h3 id="critical-patch-release-production-bug-fixes">Critical Patch Release - Production Bug Fixes</h3>
+<p>This release fixes 5 critical bugs discovered during production testing. Issues #1 and #2 are showstoppers.</p>
+<h3 id="fixed_28">Fixed</h3>
+<h4 id="api-server-startup-failure-critical">API Server Startup Failure (CRITICAL)</h4>
+<ul>
+<li><strong>Issue</strong>: API server terminated immediately with exit code 1</li>
+<li><strong>Root cause</strong>: <code>API_DB_PASSWORD</code> environment variable missing</li>
+<li><strong>Solution</strong>: Get password from project config → environment → default fallback</li>
+<li><strong>Impact</strong>: Mobile app now works correctly</li>
+</ul>
+<h4 id="database-backup-password-error-high-priority">Database Backup Password Error (HIGH PRIORITY)</h4>
+<ul>
+<li><strong>Issue</strong>: Backup failed with "no password supplied" error</li>
+<li><strong>Root cause</strong>: Password fallback returned empty string instead of 'postgres' default</li>
+<li><strong>Solution</strong>: Changed <code>os.getenv('POSTGRES_PASSWORD', '')</code> to <code>os.getenv('POSTGRES_PASSWORD', 'postgres')</code></li>
+<li><strong>Impact</strong>: Backup and restore now work with default password</li>
+</ul>
+<h4 id="pdf-export-missing-dependency-medium-priority">PDF Export Missing Dependency (MEDIUM PRIORITY)</h4>
+<ul>
+<li><strong>Issue</strong>: PDF export failed with "reportlab is required" error</li>
+<li><strong>Root cause</strong>: PyInstaller didn't include reportlab data files (fonts, encodings)</li>
+<li><strong>Solution</strong>: Added <code>collect_data_files('reportlab')</code> to build specs</li>
+<li><strong>Impact</strong>: PDF export now works in compiled executables</li>
+</ul>
+<h4 id="usage-statistics-crash-medium-priority">Usage Statistics Crash (MEDIUM PRIORITY)</h4>
+<ul>
+<li><strong>Issue</strong>: Statistics window crashed the application</li>
+<li><strong>Root cause</strong>: Permission issues accessing <code>pg_stat_activity</code> in portable PostgreSQL</li>
+<li><strong>Solution</strong>: Improved error handling, added exception logging</li>
+<li><strong>Impact</strong>: Statistics window opens gracefully, handles permission errors</li>
+</ul>
+<h4 id="false-invalid-project-warning-low-priority">False Invalid Project Warning (LOW PRIORITY)</h4>
+<ul>
+<li><strong>Issue</strong>: Warning shown when creating new projects (database doesn't exist yet)</li>
+<li><strong>Root cause</strong>: Validation ran immediately after project creation</li>
+<li><strong>Solution</strong>: Added <code>show_invalid_warning</code> parameter to skip warning in this case</li>
+<li><strong>Impact</strong>: Better UX when creating projects</li>
+</ul>
+<h3 id="changed_21">Changed</h3>
+<h4 id="build-system">Build System</h4>
+<ul>
+<li>Added reportlab data file collection to <code>build_desktop.spec</code> and <code>build_client.spec</code></li>
+<li>All .spec files now use <code>collect_data_files('reportlab')</code></li>
+</ul>
+<h4 id="installer">Installer</h4>
+<ul>
+<li>Version bumped to 2.3.0</li>
+</ul>
+<h3 id="files-modified_2">Files Modified</h3>
+<ul>
+<li><code>main.py</code> - API server password handling</li>
+<li><code>utils/backup_manager.py</code> - Backup/restore password defaults</li>
+<li><code>build_desktop.spec</code> - Added reportlab data files</li>
+<li><code>build_client.spec</code> - Added reportlab data files</li>
+<li><code>windows/statistics_window.py</code> - Improved error handling</li>
+<li><code>dialogs/project_dialogs.py</code> - Added validation skip parameter</li>
+</ul>
+<h3 id="documentation_3">Documentation</h3>
+<ul>
+<li>Added <code>BUG_FIXES_v2.3.md</code> - Comprehensive bug fix documentation with testing instructions</li>
+</ul>
+<hr />
+<h2 id="220-2025-12-09">[2.2.0] - 2025-12-09</h2>
+<h3 id="patch-release-installation-and-data-persistence-fixes">Patch Release - Installation and Data Persistence Fixes</h3>
+<p>This release fixes two critical bugs discovered during fresh PC testing.</p>
+<h3 id="fixed_29">Fixed</h3>
+<h4 id="project-persistence-after-uninstall">Project Persistence After Uninstall</h4>
+<ul>
+<li><strong>Issue</strong>: Old projects persisted in project selector after uninstalling and reinstalling</li>
+<li><strong>Root cause</strong>: <code>projects.json</code> stored in AppData was not deleted during uninstall</li>
+<li><strong>Solution 1</strong>: Added database validation to detect and mark inaccessible projects (shown in red with ⚠ symbol)</li>
+<li><strong>Solution 2</strong>: Added "Remove Project" button to delete invalid projects from the list</li>
+<li><strong>Solution 3</strong>: Installer now deletes AppData configuration files during uninstall</li>
+<li><strong>Impact</strong>: Users can now cleanly reinstall without ghost projects appearing</li>
+</ul>
+<h4 id="database-backup-pg_dump-not-found-error">Database Backup "pg_dump not found" Error</h4>
+<ul>
+<li><strong>Issue</strong>: Database backup/restore failed with "pg_dump not found" error</li>
+<li><strong>Root cause</strong>: Backup system only checked system PostgreSQL installations, not the bundled portable PostgreSQL</li>
+<li><strong>Solution</strong>: Updated <code>_find_pg_dump()</code> and <code>_find_psql()</code> to check portable PostgreSQL paths:</li>
+<li>Executable-relative paths: <code>&lt;exe_dir&gt;/postgresql/bin/</code></li>
+<li>Installation paths: <code>C:\Program Files\BenchVault\postgresql\bin\</code></li>
+<li>Development paths: <code>&lt;project_root&gt;/postgresql_portable/bin/</code></li>
+<li><strong>Impact</strong>: Database backup and restore now work correctly with bundled portable PostgreSQL</li>
+</ul>
+<h3 id="changed_22">Changed</h3>
+<h4 id="project-selector-ui">Project Selector UI</h4>
+<ul>
+<li>Invalid projects now shown in red text with ⚠ warning symbol</li>
+<li>Warning dialog displays when invalid projects are detected</li>
+<li>"Remove Project" button added to clean up invalid entries</li>
+<li>Auto-selects first valid project instead of invalid ones</li>
+</ul>
+<h4 id="installer_1">Installer</h4>
+<ul>
+<li>Uninstaller now cleans up <code>projects.json</code> and <code>server_config.json</code> from AppData</li>
+<li>Version bumped to 2.2.0</li>
+</ul>
+<h3 id="files-modified_3">Files Modified</h3>
+<ul>
+<li><code>dialogs/project_dialogs.py</code> - Added validation and removal features</li>
+<li><code>utils/backup_manager.py</code> - Enhanced PostgreSQL utility finder</li>
+<li><code>installer.iss</code> - Added UninstallDelete section</li>
+</ul>
+<h3 id="documentation_4">Documentation</h3>
+<ul>
+<li>Added <code>BUG_FIXES_v2.2.md</code> - Comprehensive bug fix documentation</li>
+</ul>
+<hr />
+<h2 id="210-2025-12-05">[2.1.0] - 2025-12-05</h2>
+<h3 id="minor-release-windows-installer-mobile-app-and-production-improvements">Minor Release - Windows Installer, Mobile App, and Production Improvements</h3>
+<p>This release adds production-ready deployment tools, mobile app support, and fixes critical issues from v2.0.</p>
+<h3 id="added_17">Added</h3>
+<h4 id="deployment-and-installation">Deployment and Installation</h4>
+<ul>
+<li><strong>Windows Installer</strong> using Inno Setup for one-click installation</li>
+<li>Bundles Desktop Application, API Server, PostgreSQL (portable), and Launcher</li>
+<li>Automatic service management with visual launcher interface</li>
+<li>No manual dependency installation required</li>
+<li>Professional installer with Start Menu and Desktop shortcuts</li>
+<li><strong>Build system</strong> (<code>build_all.py</code>) for creating standalone executables with PyInstaller</li>
+<li><strong>Launcher application</strong> (<code>launcher.py</code>) for managing PostgreSQL and API server services</li>
+<li>Visual status indicators for all services</li>
+<li>One-click start/stop for database and API</li>
+<li>Activity log with real-time updates</li>
+<li>Automatic database initialization on first run</li>
+<li><strong>Client installer</strong> (<code>installer_client.iss</code>) for lightweight remote desktop installations</li>
+<li><strong>Comprehensive deployment documentation</strong> (BUILD_README.md, DEPLOYMENT_GUIDE.md)</li>
+</ul>
+<h4 id="mobile-application">Mobile Application</h4>
+<ul>
+<li><strong>Flutter mobile companion app</strong> (<code>eln_mobile_app/</code>) with native iOS and Android support</li>
+<li>QR code scanning for instant sample lookup</li>
+<li>Experiment browsing and detailed view</li>
+<li>Photo capture from camera or gallery (JPEG, compressed to 1920x1080 @ 85%)</li>
+<li>Voice note recording with configurable quality (AAC-LC, 128kbps, 44.1kHz)</li>
+<li>Inventory search with low stock alerts</li>
+<li>Equipment reservation management</li>
+<li>JWT-based authentication with secure local storage</li>
+<li><strong>Media services</strong> for photo and voice recording</li>
+<li>Runtime permission requests (camera, microphone, storage)</li>
+<li>Pause/resume/cancel recording controls</li>
+<li>Upload progress indicators</li>
+<li>Multipart form data upload via Dio</li>
+<li><strong>Platform-specific configuration</strong> (AndroidManifest.xml, Info.plist)</li>
+<li><strong>File upload API endpoints</strong> for photos and voice recordings</li>
+<li><code>POST /api/v1/experiments/{id}/photo</code></li>
+<li><code>POST /api/v1/experiments/{id}/voice</code></li>
+<li>Files stored in <code>experiment_files/</code> with metadata in ExperimentFiles table</li>
+</ul>
+<h4 id="data-export-and-backup">Data Export and Backup</h4>
+<ul>
+<li><strong>Batch PDF Export</strong> for multiple experiments at once</li>
+<li>Select multiple experiments from list</li>
+<li>Progress dialog with percentage indicator</li>
+<li>Professional PDF formatting with experiment details</li>
+<li><strong>Excel Export</strong> for inventory management</li>
+<li>Export to .xlsx format with location tracking</li>
+<li>Includes all inventory fields (quantity, units, supplier, location, reorder threshold)</li>
+<li>Automatic column sizing</li>
+<li><strong>Database Backup/Restore</strong> with file attachments support</li>
+<li>Complete pg_dump backup of PostgreSQL database</li>
+<li>Includes analysis files and experiment attachments</li>
+<li>One-click restore with file integrity verification</li>
+<li>Backup manager utility (<code>utils/backup_manager.py</code>)</li>
+<li><strong>Weekly Email Summaries</strong> for Master accounts</li>
+<li>Automated weekly reports with activity statistics</li>
+<li>Experiment, sample, and analysis counts</li>
+<li>Top users ranking</li>
+<li>Low stock alerts</li>
+</ul>
+<h4 id="documentation_5">Documentation</h4>
+<ul>
+<li><strong>BUILD_README.md</strong> - Complete build and packaging guide</li>
+<li><strong>DEPLOYMENT_GUIDE.md</strong> - Production deployment instructions</li>
+<li><strong>TESTING_GUIDE.md</strong> - Testing procedures and QA checklist</li>
+<li><strong>FLUTTER_IMPLEMENTATION.md</strong> - Mobile app architecture details</li>
+<li><strong>FLUTTER_SETUP_GUIDE.md</strong> - Mobile development setup instructions</li>
+<li><strong>MOBILE_APP_ARCHITECTURE.md</strong> - Mobile app technical documentation</li>
+<li><strong>MOBILE_APP_QUICKSTART.md</strong> - Quick mobile app testing guide</li>
+<li><strong>PROJECT_SYSTEM_GUIDE.md</strong> - Multi-project/database management</li>
+</ul>
+<h3 id="changed_23">Changed</h3>
+<h4 id="application-branding">Application Branding</h4>
+<ul>
+<li><strong>Application renamed</strong> from "Electronic Lab Notebook" to "BenchVault"</li>
+<li>Updated all window titles, dialogs, and documentation</li>
+<li>Changed executable names: <code>ELN_*.exe</code> → <code>BenchVault_*.exe</code></li>
+<li>Updated AppData paths: <code>AppData\Local\ELN\</code> → <code>AppData\Local\BenchVault\</code></li>
+<li>Environment variable renamed: <code>ELN_CLIENT_MODE</code> → <code>BenchVault_CLIENT_MODE</code></li>
+<li>Installer and build scripts updated for new branding</li>
+</ul>
+<h4 id="configuration-and-permissions">Configuration and Permissions</h4>
+<ul>
+<li><strong>Configuration files moved to AppData</strong> for user-writable locations</li>
+<li>Server: <code>C:\Users\&lt;User&gt;\AppData\Local\BenchVault\projects.json</code></li>
+<li>Client: <code>C:\Users\&lt;User&gt;\AppData\Local\BenchVault_Client\server_config.json</code></li>
+<li>No administrator rights required for daily use</li>
+<li>Automatic directory creation on first run</li>
+<li><strong>PostgreSQL log files</strong> moved to data directory (user-writable)</li>
+<li>Before: <code>C:\Program Files\...\postgresql\postgresql.log</code> (requires admin)</li>
+<li>After: <code>C:\Program Files\...\postgresql\data\log\postgresql.log</code> (user-writable)</li>
+</ul>
+<h4 id="user-experience">User Experience</h4>
+<ul>
+<li><strong>Console windows hidden</strong> for all subprocess operations</li>
+<li>PostgreSQL startup uses <code>CREATE_NO_WINDOW</code> flag</li>
+<li>API server startup runs in background</li>
+<li>Cleaner, more professional appearance</li>
+<li><strong>UTF-8 encoding support</strong> for Windows console output</li>
+<li>Fixes UnicodeEncodeError with emoji characters (✓, ✗, 🧪, etc.)</li>
+<li>Automatic encoding wrapper on Windows platform</li>
+<li>Proper display of international characters</li>
+</ul>
+<h4 id="api-and-backend">API and Backend</h4>
+<ul>
+<li><strong>API server database configuration</strong> passed via environment variables</li>
+<li><code>API_DB_HOST</code>, <code>API_DB_PORT</code>, <code>API_DB_NAME</code>, <code>API_DB_USER</code>, <code>API_DB_PASSWORD</code></li>
+<li>Fixes API server not connecting to database when launched from installer</li>
+<li><strong>PostgreSQL remote access auto-configuration</strong></li>
+<li>Launcher automatically configures <code>listen_addresses = '*'</code> in postgresql.conf</li>
+<li>Updates pg_hba.conf with network access rules (192.168.0.0/16, 10.0.0.0/8)</li>
+<li>No manual script execution required</li>
+<li>Stale lock file cleanup on startup</li>
+</ul>
+<h4 id="build-and-deployment">Build and Deployment</h4>
+<ul>
+<li><strong>PyInstaller spec files</strong> updated for BenchVault branding</li>
+<li><code>build_desktop.spec</code>, <code>build_api_server.spec</code>, <code>build_launcher.spec</code>, <code>build_client.spec</code></li>
+<li><strong>Build verification</strong> updated to check for BenchVault executables</li>
+<li><strong>Installer scripts</strong> updated for new executable names and paths</li>
+</ul>
+<h3 id="fixed_30">Fixed</h3>
+<h4 id="critical-fixes">Critical Fixes</h4>
+<ul>
+<li><strong>API server not accessible</strong> despite showing "running" status</li>
+<li>Root cause: Missing database connection environment variables</li>
+<li>Fix: Added environment variables to API subprocess in launcher and desktop app</li>
+<li>Testing: API now accessible at <code>localhost:8000/docs</code> with Swagger UI</li>
+<li><strong>Permission denied errors</strong> on fresh PC installations</li>
+<li>projects.json write failures to Program Files</li>
+<li>Fix: Moved to AppData\Local\BenchVault\ (user-writable)</li>
+<li><strong>Launcher hanging</strong> with CMD window appearing</li>
+<li>Root cause: PostgreSQL subprocess creating visible console</li>
+<li>Fix: Added <code>CREATE_NO_WINDOW</code> flag to all subprocess calls</li>
+<li><strong>UnicodeEncodeError</strong> on Windows console</li>
+<li>Root cause: Windows console doesn't support UTF-8 by default</li>
+<li>Fix: Added UTF-8 encoding wrapper to stdout/stderr in main.py</li>
+<li><strong>Calendar crash</strong> when clicking dates with entries</li>
+<li>Root cause: IndexError accessing event[4] (Status column doesn't exist)</li>
+<li>Fix: Added placeholder 'Active' status in SQL query</li>
+</ul>
+<h4 id="installation-and-configuration">Installation and Configuration</h4>
+<ul>
+<li><strong>PostgreSQL initialization issues</strong> with password requirement</li>
+<li>Fix: Use temporary password file with <code>--pwfile</code> parameter for initdb</li>
+<li><strong>Remote access configuration</strong> required manual script execution</li>
+<li>Fix: Launcher automatically configures postgresql.conf and pg_hba.conf</li>
+<li>Eliminates need for manual <code>configure_remote_access.bat</code> execution</li>
+<li><strong>Stale postmaster.pid</strong> preventing PostgreSQL startup</li>
+<li>Fix: Automatic cleanup of stale lock files during initialization</li>
+<li><strong>Server configuration not persistent</strong> in client mode</li>
+<li>Fix: Proper config file handling in AppData location</li>
+<li>Added "Reconfigure Server..." menu option for clients</li>
+</ul>
+<h4 id="user-interface">User Interface</h4>
+<ul>
+<li><strong>Client users couldn't switch databases</strong> or reconfigure server</li>
+<li>Fix: Added "Reconfigure Server..." menu option in client mode</li>
+<li>Prompts for application restart after configuration change</li>
+<li><strong>Projects.json not found</strong> after rename operation</li>
+<li>Fix: Automatic migration from old location to new AppData path</li>
+<li>Helper function <code>get_projects_config_path()</code> for consistent path handling</li>
+</ul>
+<h4 id="build-system_1">Build System</h4>
+<ul>
+<li><strong>Compiler errors</strong> with renamed executable names</li>
+<li>Fix: Updated all .spec files to use BenchVault_ prefix</li>
+<li>Updated build_all.py verification to check new names</li>
+<li>Ensured consistency between installer and build scripts</li>
+</ul>
+<h3 id="security_3">Security</h3>
+<ul>
+<li><strong>Configuration files</strong> moved out of Program Files (reduces attack surface)</li>
+<li><strong>No administrator privileges required</strong> for daily operations</li>
+<li><strong>Secure token storage</strong> in mobile app using flutter_secure_storage</li>
+<li><strong>JWT tokens</strong> with 60-minute expiration for mobile API</li>
+</ul>
+<h3 id="known-issues">Known Issues</h3>
+<ul>
+<li><strong>QModelIndex warnings</strong> in console when updating inventory (cosmetic, no impact)</li>
+<li><strong>record package compatibility</strong> on Linux - use version 6.1.2+ for mobile app</li>
+<li><strong>Camera/microphone testing</strong> requires physical device (emulator limitations)</li>
+<li><strong>Upload timeout</strong> on large files - increase Dio timeout if needed</li>
+</ul>
+<h3 id="deprecated">Deprecated</h3>
+<ul>
+<li><strong>Manual troubleshooting scripts</strong> (replaced by automated installer)</li>
+<li>Removed: All .bat diagnostic scripts</li>
+<li>Removed: Test and reset Python scripts</li>
+<li>Removed: Fix-specific documentation files</li>
+<li><strong>Old application name</strong> "Electronic Lab Notebook" (now "BenchVault")</li>
+<li><strong>Program Files configuration</strong> storage (now uses AppData)</li>
+</ul>
+<hr />
+<h2 id="200-2025-01-12">[2.0.0] - 2025-01-12</h2>
+<h3 id="major-release-postgresql-migration-and-multi-user-support">Major Release - PostgreSQL Migration and Multi-User Support</h3>
+<p>This is a major release that completely restructures the database backend from SQLite to PostgreSQL, enabling true multi-user collaboration and remote access capabilities.</p>
+<h3 id="added_18">Added</h3>
+<h4 id="core-features">Core Features</h4>
+<ul>
+<li><strong>Multi-user support</strong> with PostgreSQL backend and connection pooling (1-10 concurrent connections, configurable)</li>
+<li><strong>Role-based access control</strong> (Master and Regular User roles)</li>
+<li><strong>User Management module</strong> (Master only) for adding, editing, and deleting user accounts</li>
+<li><strong>Real-time synchronization</strong> across multiple computers on the same network</li>
+<li><strong>Dashboard auto-refresh</strong> (30-second interval) to show updates from all users</li>
+<li><strong>Active connection monitoring</strong> in Statistics module showing all database connections</li>
+<li><strong>Database health metrics</strong> including total records, connections, and database size</li>
+</ul>
+<h4 id="mobile-companion-app">Mobile Companion App</h4>
+<ul>
+<li><strong>REST API backend</strong> using FastAPI with comprehensive endpoints</li>
+<li><strong>JWT authentication</strong> with 60-minute token expiration</li>
+<li><strong>QR code sample lookup API</strong> for scanning sample labels at lab bench</li>
+<li><strong>Inventory search API</strong> for checking stock levels remotely</li>
+<li><strong>Equipment scheduler API</strong> for viewing reservations from mobile</li>
+<li><strong>Dashboard feed API</strong> for recent activity monitoring</li>
+<li><strong>Interactive API documentation</strong> at <code>/docs</code> endpoint (Swagger UI)</li>
+<li><strong>API testing script</strong> (<code>test_api.py</code>) with colored console output</li>
+<li><strong>CORS middleware</strong> for cross-origin requests</li>
+</ul>
+<h4 id="documentation_6">Documentation</h4>
+<ul>
+<li><strong>INSTALLATION_GUIDE.md</strong> - Complete setup instructions for Python, PostgreSQL, and multi-computer deployment</li>
+<li><strong>USER_GUIDE.md</strong> - Comprehensive feature documentation with workflows and best practices</li>
+<li><strong>API_SETUP_GUIDE.md</strong> - REST API deployment guide with ngrok, port forwarding, and HTTPS setup</li>
+<li><strong>USING_API_DOCS.md</strong> - Step-by-step guide for testing API in browser</li>
+<li><strong>README.md</strong> - Project overview and documentation index</li>
+<li><strong>FAQ.md</strong> - Frequently asked questions</li>
+<li><strong>QUICK_START.md</strong> - 10-minute setup guide</li>
+<li><strong>CHANGELOG.md</strong> - This file</li>
+<li><strong>Updated CLAUDE.md</strong> - Developer reference with mobile API section</li>
+</ul>
+<h4 id="inventory-management">Inventory Management</h4>
+<ul>
+<li><strong>Quick quantity update</strong> by double-clicking cells in inventory table</li>
+<li><strong>Signal blocking</strong> to prevent Qt model warnings during updates</li>
+<li><strong>Auto-refresh</strong> after inventory changes</li>
+<li><strong>Inventory usage tracking</strong> showing which user made changes</li>
+</ul>
+<h4 id="statistics-and-analytics">Statistics and Analytics</h4>
+<ul>
+<li><strong>Top users ranking</strong> including experiments, samples, and inventory changes</li>
+<li><strong>Activity timeline graph</strong> showing 30-day experiment and sample trends</li>
+<li><strong>Inventory status pie chart</strong> with alert level distribution</li>
+<li><strong>Database size display</strong> using PostgreSQL pg_size_pretty function</li>
+<li><strong>Fixed active connections count</strong> to show all users including Master accounts</li>
+</ul>
+<h4 id="user-interface-improvements">User Interface Improvements</h4>
+<ul>
+<li><strong>Main window centering</strong> fix for proper screen positioning on launch</li>
+<li><strong>Recent actions attribution</strong> showing correct usernames for all actions</li>
+<li><strong>Email settings password persistence</strong> (stored securely)</li>
+<li><strong>Improved experiment window</strong> with better reactant management</li>
+<li><strong>Enhanced calendar widget</strong> with activity highlighting</li>
+</ul>
+<h4 id="equipment-scheduler">Equipment Scheduler</h4>
+<ul>
+<li><strong>Automatic cleanup</strong> of old reservations (&gt;1 month) from View/Cancel window</li>
+<li><strong>Email notification system</strong> for reservation confirmations and reminders</li>
+<li><strong>Today's reservations quick view</strong></li>
+<li><strong>Calendar conflict detection</strong> preventing double-booking</li>
+</ul>
+<h4 id="database-and-backend">Database and Backend</h4>
+<ul>
+<li><strong>PostgreSQL connection pooling</strong> with automatic connection management</li>
+<li><strong>Parameterized queries</strong> throughout for SQL injection prevention</li>
+<li><strong>Foreign key constraints</strong> with CASCADE DELETE for referential integrity</li>
+<li><strong>SERIAL primary keys</strong> with RETURNING clause for ID retrieval</li>
+<li><strong>Indexed queries</strong> for performance optimization</li>
+<li><strong>Transaction support</strong> with proper commit/rollback</li>
+</ul>
+<h4 id="development-tools">Development Tools</h4>
+<ul>
+<li><strong>Migration script</strong> (<code>migrate_to_postgresql.py</code>) for converting SQLite databases</li>
+<li><strong>Environment variable configuration</strong> for flexible deployment</li>
+<li><strong>Comprehensive error handling</strong> with informative error messages</li>
+<li><strong>Logging system</strong> for debugging and monitoring</li>
+</ul>
+<h3 id="changed_24">Changed</h3>
+<h4 id="database-architecture">Database Architecture</h4>
+<ul>
+<li><strong>Migrated from SQLite to PostgreSQL</strong> for multi-user support</li>
+<li><strong>Changed placeholder syntax</strong> from <code>?</code> to <code>%s</code> for PostgreSQL compatibility</li>
+<li><strong>Replaced <code>lastrowid</code></strong> with <code>RETURNING</code> clause for ID retrieval</li>
+<li><strong>Updated schema</strong> with proper PostgreSQL data types</li>
+<li><strong>Removed file-based database selection</strong> (now uses environment variables)</li>
+</ul>
+<h4 id="application-structure">Application Structure</h4>
+<ul>
+<li><strong>Centralized database manager</strong> (<code>db_manager.py</code>) with connection pooling</li>
+<li><strong>All modules share single db_manager instance</strong> for efficient connection use</li>
+<li><strong>MainWindow manages child window lifecycle</strong> with proper references</li>
+<li><strong>Dashboard shows multi-user activity</strong> from all connected users</li>
+</ul>
+<h4 id="user-experience_1">User Experience</h4>
+<ul>
+<li><strong>Login required on startup</strong> (no longer auto-creates database file)</li>
+<li><strong>Environment variables required</strong> for database configuration</li>
+<li><strong>Network-aware</strong> design for remote access</li>
+<li><strong>Real-time updates</strong> from other users visible within 30 seconds</li>
+</ul>
+<h4 id="performance">Performance</h4>
+<ul>
+<li><strong>Connection pooling</strong> reduces database overhead</li>
+<li><strong>Indexed searches</strong> improve query performance</li>
+<li><strong>Optimized dashboard queries</strong> for faster loading</li>
+<li><strong>Reduced memory footprint</strong> with connection reuse</li>
+</ul>
+<h3 id="fixed_31">Fixed</h3>
+<h4 id="critical-fixes_1">Critical Fixes</h4>
+<ul>
+<li><strong>QModelIndex warnings</strong> reduced with signal blocking (cosmetic issue remains but data updates correctly)</li>
+<li><strong>Main window centering</strong> now works properly on all screen sizes</li>
+<li><strong>Active connections</strong> now counts all users including Master accounts</li>
+<li><strong>Database size</strong> display fixed with pg_size_pretty function</li>
+<li><strong>Recent actions</strong> now shows correct username for inventory changes</li>
+<li><strong>Email settings</strong> now remembers password securely</li>
+</ul>
+<h4 id="bug-fixes">Bug Fixes</h4>
+<ul>
+<li><strong>Equipment scheduler</strong> bugs fixed during PostgreSQL migration</li>
+<li><strong>Sample lookup API</strong> SQL query fixed to use correct column names (SampleID, SampleName, DateCreated, ParentExperimentID)</li>
+<li><strong>Sample analyses API</strong> fixed to use Notes column instead of non-existent Results column</li>
+<li><strong>Experiment reactants API</strong> fixed to use correct column names (Category, ItemID, MassToWeigh, Moles)</li>
+<li><strong>Tuple index error</strong> fixed in sample lookup (accessing correct index for ParentExperimentID)</li>
+<li><strong>User authentication</strong> improved error messages for login failures</li>
+<li><strong>Experiment deletion cascade</strong> properly removes associated samples</li>
+</ul>
+<h4 id="uiux-fixes">UI/UX Fixes</h4>
+<ul>
+<li><strong>Inventory table</strong> updates without requiring window close/reopen</li>
+<li><strong>Email configuration dialog</strong> no longer crashes application</li>
+<li><strong>Password fields</strong> properly masked in all dialogs</li>
+<li><strong>Calendar widget</strong> correctly highlights dates with activities</li>
+<li><strong>Experiment status colors</strong> display consistently across modules</li>
+</ul>
+<h3 id="deprecated_1">Deprecated</h3>
+<ul>
+<li><strong>SQLite database support</strong> - Use <code>migrate_to_postgresql.py</code> to convert existing databases</li>
+<li><strong>Single-user mode</strong> - Application now requires PostgreSQL and supports multi-user by default</li>
+<li><strong>File-based database selection</strong> - Now uses environment variables for configuration</li>
+</ul>
+<h3 id="removed_3">Removed</h3>
+<ul>
+<li><strong>SQLite import</strong> and related single-file database code</li>
+<li><strong>Automatic database file creation</strong> on startup</li>
+<li><strong>File selection dialogs</strong> for database location</li>
+<li><strong>Single-user assumptions</strong> throughout codebase</li>
+</ul>
+<h3 id="security_4">Security</h3>
+<ul>
+<li><strong>User authentication</strong> required for all operations</li>
+<li><strong>Password hashing</strong> for stored credentials</li>
+<li><strong>JWT token authentication</strong> for mobile API with expiration</li>
+<li><strong>Parameterized queries</strong> prevent SQL injection</li>
+<li><strong>Environment variable credentials</strong> (not hardcoded)</li>
+<li><strong>Role-based access control</strong> restricts administrative functions</li>
+<li><strong>PostgreSQL user authentication</strong> for database access</li>
+<li><strong>Optional HTTPS</strong> support for mobile API production deployment</li>
+</ul>
+<h3 id="known-issues_1">Known Issues</h3>
+<ul>
+<li><strong>QModelIndex warnings</strong> in console when updating inventory quantities (cosmetic, does not affect functionality)</li>
+<li><strong>Multiple experiment windows</strong> may consume significant memory if many are opened simultaneously</li>
+<li><strong>ngrok URL changes</strong> on restart (use port forwarding or dynamic DNS for permanent mobile access)</li>
+<li><strong>Gmail requires App Password</strong> (not regular account password) for email notifications</li>
+</ul>
+<hr />
+<h2 id="100-2024-xx-xx">[1.0.0] - 2024-XX-XX</h2>
+<h3 id="initial-release-sqlite-single-user-version">Initial Release - SQLite Single-User Version</h3>
+<h3 id="added_19">Added</h3>
+<ul>
+<li><strong>Experiments module</strong> with reactant management and automatic mass calculations</li>
+<li><strong>Inventory module</strong> with basic tracking and categories</li>
+<li><strong>Samples module</strong> with parent experiment linking</li>
+<li><strong>Protocols module</strong> for storing SOPs</li>
+<li><strong>QR code generation</strong> for samples and inventory items</li>
+<li><strong>Equipment scheduler</strong> with basic reservation system</li>
+<li><strong>Analysis tracking</strong> with file attachments</li>
+<li><strong>PDF export</strong> for experiments</li>
+<li><strong>Calendar widget</strong> for date-based filtering</li>
+<li><strong>Basic statistics</strong> and reporting</li>
+<li><strong>Single-user SQLite database</strong></li>
+</ul>
+<h3 id="features">Features</h3>
+<ul>
+<li>Experiment creation with reactant calculations</li>
+<li>Inventory tracking with categories</li>
+<li>Sample management with QR labels</li>
+<li>Protocol storage</li>
+<li>Equipment reservations</li>
+<li>Analysis file attachments</li>
+<li>PDF report generation</li>
+</ul>
+<h3 id="limitations">Limitations</h3>
+<ul>
+<li>Single-user only (no concurrent access)</li>
+<li>SQLite database (file-based, no network support)</li>
+<li>No user authentication</li>
+<li>No real-time synchronization</li>
+<li>No mobile access</li>
+<li>Limited to single computer</li>
+</ul>
+<hr />
+<h2 id="migration-guide-from-v10-to-v20">Migration Guide from v1.0 to v2.0</h2>
+<h3 id="prerequisites">Prerequisites</h3>
+<ul>
+<li>PostgreSQL 12+ installed</li>
+<li>Environment variables configured</li>
+<li>Backup of v1.0 SQLite database</li>
+</ul>
+<h3 id="migration-steps">Migration Steps</h3>
+<ol>
+<li>
+<p><strong>Backup your SQLite database</strong> (critical!)
+   <code>bash
+   cp lab_notebook.db lab_notebook_backup.db</code></p>
+</li>
+<li>
+<p><strong>Install PostgreSQL</strong> (see INSTALLATION_GUIDE.md)</p>
+</li>
+<li>
+<p><strong>Create new PostgreSQL database</strong>
+   <code>sql
+   CREATE DATABASE lab_notebook;</code></p>
+</li>
+<li>
+<p><strong>Set environment variables</strong>
+   <code>batch
+   setx POSTGRES_HOST "localhost"
+   setx POSTGRES_PORT "5432"
+   setx POSTGRES_DB "lab_notebook"
+   setx POSTGRES_USER "postgres"
+   setx POSTGRES_PASSWORD "your_password"</code></p>
+</li>
+<li>
+<p><strong>Run migration script</strong>
+   <code>bash
+   python migrate_to_postgresql.py</code></p>
+</li>
+<li>
+<p><strong>Verify migration</strong>
+   - Login to application
+   - Check experiments, inventory, samples
+   - Verify data integrity</p>
+</li>
+<li>
+<p><strong>Set up additional users</strong>
+   - Login as Master (first registered user)
+   - Add user accounts for lab members
+   - Configure equipment and settings</p>
+</li>
+</ol>
+<h3 id="whats-preserved">What's Preserved</h3>
+<ul>
+<li>All experiments with reactants</li>
+<li>All inventory items</li>
+<li>All samples with analyses</li>
+<li>All protocols</li>
+<li>All equipment and reservations</li>
+<li>Analysis file attachments (files remain on disk)</li>
+</ul>
+<h3 id="what-changes">What Changes</h3>
+<ul>
+<li><strong>Login required</strong>: First user must register and becomes Master account</li>
+<li><strong>Environment variables</strong>: Must be configured before running</li>
+<li><strong>Network access</strong>: Can now connect from multiple computers</li>
+<li><strong>User attribution</strong>: Old data shows "Unknown" user (no users in v1.0)</li>
+</ul>
+<h3 id="whats-new">What's New</h3>
+<ul>
+<li>Multi-user support</li>
+<li>User management</li>
+<li>Mobile API access</li>
+<li>Real-time synchronization</li>
+<li>Role-based permissions</li>
+<li>Enhanced statistics</li>
+</ul>
+<hr />
+<h2 id="version-numbering">Version Numbering</h2>
+<p>This project uses <a href="https://semver.org/">Semantic Versioning</a>:</p>
+<ul>
+<li><strong>MAJOR</strong> version (X.0.0): Incompatible changes (e.g., database migration)</li>
+<li><strong>MINOR</strong> version (1.X.0): New features, backward-compatible</li>
+<li><strong>PATCH</strong> version (1.0.X): Bug fixes, backward-compatible</li>
+</ul>
+<hr />
+<h2 id="upgrade-instructions">Upgrade Instructions</h2>
+<h3 id="from-v10-to-v20">From v1.0 to v2.0</h3>
+<p><strong>This is a MAJOR upgrade requiring database migration. See Migration Guide above.</strong></p>
+<h3 id="future-minorpatch-upgrades">Future Minor/Patch Upgrades</h3>
+<p>For future updates (v2.1.0, v2.0.1, etc.):</p>
+<ol>
+<li>
+<p><strong>Backup database first</strong>
+   <code>bash
+   pg_dump -U postgres -d lab_notebook -F c -f backup.dump</code></p>
+</li>
+<li>
+<p><strong>Update Python dependencies</strong>
+   <code>bash
+   pip install -r requirements.txt --upgrade</code></p>
+</li>
+<li>
+<p><strong>Run application</strong>
+   <code>bash
+   python main.py</code></p>
+</li>
+<li>
+<p><strong>Check changelog</strong> for any breaking changes or new features</p>
+</li>
+</ol>
+<hr />
+<h2 id="planned-features-future-releases">Planned Features (Future Releases)</h2>
+<h3 id="v220-planned">v2.2.0 (Planned)</h3>
+<ul>
+<li>Advanced search across all modules</li>
+<li>Custom fields for experiments</li>
+<li>Enhanced audit logging</li>
+<li>Report templates customization</li>
+<li>Batch QR label generation for inventory</li>
+</ul>
+<h3 id="v270-planned">v2.7.0 (Planned)</h3>
+<ul>
+<li>Offline mode for mobile app</li>
+<li>Instrument data import</li>
+<li>Electronic signatures</li>
+<li>Advanced analytics dashboard</li>
+<li>Scheduled automatic cloud backups</li>
+</ul>
+<h3 id="v300-planned">v3.0.0 (Planned)</h3>
+<ul>
+<li>Multi-lab support (one installation, multiple independent labs)</li>
+<li>LIMS integration</li>
+<li>Advanced workflow automation</li>
+<li>Custom Python scripting for calculations</li>
+<li>Web interface (browser-based access)</li>
+<li>GraphQL API in addition to REST</li>
+</ul>
+<hr />
+<h2 id="contributing">Contributing</h2>
+<p>Changes should be documented in this file under "Unreleased" section until next version release.</p>
+<hr />
+<p><strong>Changelog maintained by</strong>: BenchVault Development Team
+<strong>Last Updated</strong>: 2026-02-03</p>
+  </article>
+</main>
+
+<footer class="doc-footer">
+  <span>BenchVault v5.0.4 — AGPL-3.0-only</span>
+  <a href="https://github.com/ivanmaric465-alt/benchvault">github.com/ivanmaric465-alt/benchvault</a>
+</footer>
+</body>
+</html>

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>User Guide — BenchVault v5.0.4</title>
+<meta name="description" content="User Guide for BenchVault, the self-hosted electronic lab notebook.">
+<link rel="icon" type="image/png" href="images/app_icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<div class="spectrum-rule"></div>
+<header class="topbar">
+  <a class="brand" href="index.html">
+    <img src="images/app_icon.png" alt="" width="28" height="28">
+    <span>BenchVault</span>
+  </a>
+  <nav class="topbar-links">
+    <a href="index.html">Home</a>
+    <a href="INSTALL.html">Install</a>
+    <a href="USER_GUIDE.html">Guides</a>
+    <a href="https://github.com/ivanmaric465-alt/benchvault">GitHub</a>
+  </nav>
+</header>
+
+<main class="doc-shell">
+  <details class="doc-nav-mobile">
+    <summary>All guides</summary>
+    <nav class="doc-nav"><a href="INSTALL.html">Install Guide</a>
+<a href="USER_GUIDE.html" aria-current="page">User Guide</a>
+<a href="ADMIN_GUIDE.html">Administrator Guide</a>
+<a href="DOCKER_DEPLOY_GUIDE.html">Deployment Guide</a>
+<a href="CHANGELOG.html">Changelog</a></nav>
+  </details>
+  <nav class="doc-nav doc-nav-desktop" aria-label="Documentation"><a href="INSTALL.html">Install Guide</a>
+<a href="USER_GUIDE.html" aria-current="page">User Guide</a>
+<a href="ADMIN_GUIDE.html">Administrator Guide</a>
+<a href="DOCKER_DEPLOY_GUIDE.html">Deployment Guide</a>
+<a href="CHANGELOG.html">Changelog</a></nav>
+  <article class="doc-body">
+    <p class="doc-eyebrow">BenchVault v5.0.4</p>
+    <h1>User Guide</h1>
+    <p>Everything you can do in BenchVault, day to day.</p>
+<p>BenchVault runs in your web browser. Whoever set it up for your lab will give
+you an address and an account — there is nothing to install on your computer.</p>
+<p>If you are the one setting it up, start with the <a href="INSTALL.html">Install Guide</a>.
+If you manage accounts and settings, see the
+<a href="ADMIN_GUIDE.html">Administrator Guide</a>.</p>
+<hr />
+<h2 id="signing-in">Signing in</h2>
+<p><img alt="The sign-in screen" src="images/login.png" /></p>
+<p>Open the address your lab uses and enter your username and password. If you
+don't have an account, ask a <strong>Master</strong> user in your group to create one — there
+is no self-signup.</p>
+<p>The first time you sign in you may be asked to change your password. That
+happens when the person who created your account gave you a temporary one.</p>
+<hr />
+<h2 id="the-dashboard">The dashboard</h2>
+<p><img alt="The dashboard" src="images/dashboard-overview.png" /></p>
+<p>Your home screen, in three parts:</p>
+<ul>
+<li><strong>Calendar</strong> — experiments, samples, analyses, and equipment bookings by date.
+  Click a day to see what happened, then click any entry to open the record.</li>
+<li><strong>Recent activity</strong> — what has changed across the lab lately. "View all →"
+  opens the full history.</li>
+<li><strong>Inventory alerts</strong> — chemicals running low, so you find out before you reach
+  for an empty bottle.</li>
+</ul>
+<p>Master users also see a totals strip across the top.</p>
+<blockquote>
+<p>Don't see the activity feed? A Master user can turn it off for everyone. Same
+for Inventory — see <a href="#missing-something">Missing something?</a> at the end.</p>
+</blockquote>
+<hr />
+<h2 id="experiments">Experiments</h2>
+<p>The heart of BenchVault. Everything else hangs off experiments.</p>
+<p><img alt="The experiments list" src="images/experiments-list.png" /></p>
+<h3 id="creating-one-step-by-step">Creating one, step by step</h3>
+<p><img alt="Creating an experiment" src="images/experiment-create-form.png" /></p>
+<ol>
+<li>Click <strong>Experiments</strong> in the sidebar.</li>
+<li>Click <strong>New Experiment</strong>.</li>
+<li>Give it a <strong>Title</strong> — the name you'd use talking to a colleague.</li>
+<li>Set the <strong>Date</strong>. Today's date is filled in for you.</li>
+<li>Write your <strong>Procedure</strong> — what you actually plan to do.</li>
+<li>Click <strong>Save</strong>.</li>
+</ol>
+<p>That's the whole minimum. You now have a record you can add to as work
+progresses.</p>
+<p><img alt="An experiment's detail page" src="images/experiment-detail.png" /></p>
+<p>The detail page collects everything about that experiment: <strong>Reactants</strong>,
+<strong>Parameters</strong>, <strong>Tags</strong>, <strong>Attachments</strong>, and your <strong>Procedure</strong>. Each section
+is edited in place — there is no separate "edit mode" to remember to leave.</p>
+<p>Once you have run something worth repeating, <strong>Save as template</strong> turns it into
+a reusable starting point. See <a href="#templates">Templates</a>.</p>
+<h3 id="reactants-and-the-molarity-calculator">Reactants and the molarity calculator</h3>
+<p><img alt="Reactants with the calculator" src="images/experiment-reactants.png" /></p>
+<p>This is the part that saves real time at the bench.</p>
+<ol>
+<li>In <strong>Reactants</strong>, add a row and pick a chemical from your lab's inventory.</li>
+<li>Choose what it is: <strong>Reactant</strong>, <strong>Stock Solution</strong>, <strong>Solvent</strong>, or
+   <strong>Other</strong>.</li>
+<li>Enter your target molarity.</li>
+</ol>
+<p>BenchVault works out <strong>how much to weigh</strong>, or <strong>what volume to pipette</strong> from a
+stock solution, using the experiment's final volume. Change the final volume in
+<strong>Parameters</strong> and every reactant recalculates.</p>
+<p>The <strong>Calculation Summary</strong> shows the numbers it derived.</p>
+<blockquote>
+<p><strong>Inventory moves with your reactants.</strong> If your lab has auto-deduct switched
+on, adding a reactant subtracts that quantity from stock automatically.
+Removing one asks whether to put the quantity back or leave it as consumed —
+answer honestly, because that is what keeps stock levels true.</p>
+</blockquote>
+<h3 id="attachments">Attachments</h3>
+<p><img alt="Attachments on an experiment" src="images/experiment-attachments.png" /></p>
+<p>Drop in spectra, chromatograms, photos of your notebook — anything. Upload,
+download, and delete from the <strong>Attachments</strong> section.</p>
+<h3 id="deleting-and-restoring">Deleting and restoring</h3>
+<p><img alt="The trash" src="images/experiments-trash.png" /></p>
+<p><strong>Move to trash</strong> removes an experiment from your list without destroying it.
+Open <strong>Trash</strong> to see what's there and <strong>Restore</strong> anything you need back.</p>
+<p><strong>Purge</strong> — permanent deletion — is Master-only, and BenchVault refuses if
+samples still reference the experiment. Deleting the parent of records you still
+have would leave those records orphaned.</p>
+<hr />
+<h2 id="inventory">Inventory</h2>
+<p><img alt="Chemical inventory" src="images/inventory-list.png" /></p>
+<p>Your lab's chemical stock: what you have, how much, and where it lives.</p>
+<ul>
+<li><strong>Search</strong> to find a chemical fast.</li>
+<li><strong>Low-stock rows are highlighted</strong> so shortages are visible at a glance.</li>
+<li><strong>Add</strong>, <strong>edit</strong>, and <strong>delete</strong> items. Deleting refuses if a chemical is
+  still used by an experiment, and tells you so.</li>
+</ul>
+<h3 id="bringing-in-an-existing-list">Bringing in an existing list</h3>
+<p><img alt="Import preview" src="images/inventory-import-preview.png" /></p>
+<p>Already keep stock in a spreadsheet? Import it. BenchVault reads your Excel
+file, works out which column is which, and <strong>shows you a preview before
+anything is saved</strong>. Check the mapping looks right, then confirm. You can export
+back to Excel at any time.</p>
+<blockquote>
+<p>Don't see Inventory in the sidebar? A Master user has switched the module off
+for your lab.</p>
+</blockquote>
+<hr />
+<h2 id="samples">Samples</h2>
+<p><img alt="The samples list" src="images/samples-list.png" /></p>
+<p>Samples are the physical things you produce — usually from an experiment.</p>
+<p>Each sample records a name, a storage location, and its parent experiment, so
+you can always trace a vial in a freezer back to the work that made it.</p>
+<p><img alt="A sample and its analyses" src="images/sample-detail.png" /></p>
+<p>Open a sample to manage its <strong>Analyses</strong>. Each analysis has a type (NMR, HPLC,
+MS — your lab's Master curates this list), a date, and its own file
+attachments. That is where raw data files belong.</p>
+<p>Samples have the same <strong>Move to trash</strong> / <strong>Restore</strong> / Master-only <strong>Purge</strong>
+safety net as experiments.</p>
+<hr />
+<h2 id="templates">Templates</h2>
+<p><img alt="Templates" src="images/templates-list.png" /></p>
+<p>A template is an experiment worth repeating — its reactants, parameters, and
+tags captured for reuse.</p>
+<ul>
+<li><strong>Save as template</strong> from any experiment's detail page.</li>
+<li>Starting from a template creates a new experiment with everything already
+  filled in, ready to adjust.</li>
+<li>Rename or delete your own templates. Masters can manage anyone's.</li>
+</ul>
+<p>For a procedure you run weekly, this removes the retyping and the chance of
+mistyping.</p>
+<hr />
+<h2 id="equipment">Equipment</h2>
+<p><img alt="The weekly booking grid" src="images/equipment-week-grid.png" /></p>
+<p>Book shared instruments so two people don't turn up at once.</p>
+<ol>
+<li>Choose an instrument.</li>
+<li>Click an empty slot on the weekly grid.</li>
+<li>Confirm the time.</li>
+</ol>
+<p><img alt="A booking clash" src="images/equipment-conflict.png" /></p>
+<p>If someone already has that slot, BenchVault refuses the booking and says so —
+double-bookings are impossible rather than merely discouraged.</p>
+<p>Cancel your own bookings any time; Masters can cancel anyone's. Bookings also
+appear on the dashboard calendar.</p>
+<hr />
+<h2 id="graph">Graph</h2>
+<p><img alt="The knowledge graph" src="images/graph-view.png" /></p>
+<p>A visual map of how your lab's records connect.</p>
+<p>Search for any record to put it at the centre, and see what it links to:
+samples from an experiment, analyses from a sample, records sharing a tag, or
+experiments using the same chemical. Click any node to re-centre on it and keep
+exploring.</p>
+<p>Useful for "what came out of this work?" — a question that's tedious to answer
+by clicking through lists one at a time.</p>
+<hr />
+<h2 id="search-and-tags">Search and tags</h2>
+<p><img alt="Search results" src="images/search-results.png" /></p>
+<p><strong>Search</strong> looks across every module at once — experiments, samples,
+inventory, equipment — and groups results by what they are.</p>
+<p><img alt="Tag management" src="images/tags-management.png" /></p>
+<p><strong>Tags</strong> are free labels you attach to experiments. The Tags page shows every
+tag in use across the lab and lets you tidy them up.</p>
+<p>Agree on tags with your group. Consistent tags make the Graph and Search far
+more useful; ad-hoc ones just add noise.</p>
+<hr />
+<h2 id="the-ai-assistant">The AI assistant</h2>
+<p><img alt="The AI assistant" src="images/ai-assistant.png" /></p>
+<p>If your lab has configured it, an assistant drawer slides out from the side and
+answers questions about your lab's data in plain language.</p>
+<p>It is off unless a Master has added an API key, and it is a <strong>drawer, not a
+page</strong> — it opens over whatever you're working on and closes again.</p>
+<blockquote>
+<p>Anything you ask is sent to the configured AI provider for processing. If
+that matters for your work, check with whoever administers your deployment.</p>
+</blockquote>
+<hr />
+<h2 id="your-account">Your account</h2>
+<p><img alt="Account settings" src="images/account-overview.png" /></p>
+<p>Under <strong>Account</strong> you can change your password.</p>
+<p>Master users see considerably more here — users, email, backups, AI, and server
+settings. Those are covered in the
+<a href="ADMIN_GUIDE.html">Administrator Guide</a>.</p>
+<hr />
+<h2 id="why-cant-i-edit-this">Why can't I edit this?</h2>
+<p>Two things decide what you can change.</p>
+<p><strong>Your role.</strong> <strong>Regular</strong> users edit their own records; <strong>Master</strong> users edit
+anything. Master-only screens — Audit Log, Analysis Categories, most of Account
+— don't appear in your sidebar at all if you're Regular, so if you can't see
+something described here, that's usually why.</p>
+<p><strong>Who created it.</strong> As a Regular user you can open and read a colleague's
+experiment, but not change it. Ask them, or ask a Master.</p>
+<h3 id="someone-else-saved-first">"Someone else saved first"</h3>
+<p>Occasionally you'll try to save and be told the record changed while you had it
+open. That means a colleague saved their edits between you opening the page and
+clicking save.</p>
+<p>BenchVault refuses rather than silently discarding one of you. Reload to see
+their version, then reapply your change. It's a small annoyance that prevents a
+much worse one — quietly losing someone's work.</p>
+<hr />
+<h2 id="missing-something">Missing something?</h2>
+<p>If a module described here isn't in your sidebar, it is almost always switched
+off rather than broken:</p>
+<ul>
+<li><strong>Inventory</strong> and the <strong>Activity</strong> feed can each be disabled for the whole lab
+  by a Master user.</li>
+<li><strong>Audit Log</strong> and <strong>Analysis Categories</strong> are Master-only and never appear for
+  Regular users.</li>
+</ul>
+<p>Ask a Master user in your group — see the
+<a href="ADMIN_GUIDE.html">Administrator Guide</a>.</p>
+  </article>
+</main>
+
+<footer class="doc-footer">
+  <span>BenchVault v5.0.4 — AGPL-3.0-only</span>
+  <a href="https://github.com/ivanmaric465-alt/benchvault">github.com/ivanmaric465-alt/benchvault</a>
+</footer>
+</body>
+</html>

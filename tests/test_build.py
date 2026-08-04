@@ -63,3 +63,29 @@ def test_render_markdown_supports_tables():
 def test_docs_and_redirects_do_not_collide():
     """A redirect stub must never overwrite a real guide."""
     assert not set(build.REDIRECTS) & {slug for slug, _ in build.DOCS}
+
+
+SOURCE = Path(__file__).resolve().parents[1].parent / "eln_refactor"
+
+
+@pytest.mark.skipif(not SOURCE.is_dir(), reason="benchvault checkout not present")
+def test_main_generates_every_guide():
+    assert build.main(["--source", str(SOURCE)]) == 0
+    version = build.read_version(SOURCE)
+    for slug, title in build.DOCS:
+        page = (build.REPO / f"{slug}.html").read_text(encoding="utf-8")
+        assert f"<h1>{title}</h1>" in page
+        assert f"v{version}" in page
+        # The guide's own H1 must be stripped, not duplicated.
+        assert page.count("<h1") == 1
+    assert (build.REPO / ".nojekyll").exists()
+    assert (build.REPO / "images" / "app_icon.png").exists()
+    assert (build.REPO / "images" / "dashboard-overview.png").exists()
+
+
+@pytest.mark.skipif(not SOURCE.is_dir(), reason="benchvault checkout not present")
+def test_main_rewrites_the_cross_guide_fragment_link():
+    build.main(["--source", str(SOURCE)])
+    admin = (build.REPO / "ADMIN_GUIDE.html").read_text(encoding="utf-8")
+    assert 'href="INSTALL.html#8-when-something-goes-wrong"' in admin
+    assert ".md\"" not in admin
