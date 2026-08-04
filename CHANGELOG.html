@@ -50,6 +50,11 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <h2 id="unreleased">[Unreleased]</h2>
 <h3 id="changed">Changed</h3>
 <ul>
+<li><strong>App backup timestamps follow the host timezone.</strong> The api container
+  defaults to <code>UTC</code>, so "Back up now" / automatic-backup filenames and Server
+  card timestamps appeared hours behind <code>scripts/backup.sh</code> runs (which use
+  the host clock). <code>docker-compose.yml</code> now passes a <code>TZ</code> variable to the api
+  container (default <code>UTC</code>; set e.g. <code>TZ=Europe/Belgrade</code> in <code>.env</code>).</li>
 <li><strong><code>scripts/backup.sh --cloud</code> uploads one file per run.</strong> The db dump and
   data-volume archive are packaged into a single
   <code>benchvault-backup-&lt;timestamp&gt;.zip</code> before upload, so scripted runs appear

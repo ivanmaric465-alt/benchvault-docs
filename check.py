@@ -95,6 +95,22 @@ def check_banned(pages: list[Path]) -> list[str]:
     return problems
 
 
+def check_redirects(repo: Path) -> list[str]:
+    """Every legacy URL must exist and point at a page that exists."""
+    problems: list[str] = []
+    for slug, target in build.REDIRECTS.items():
+        stub = repo / f"{slug}.html"
+        if not stub.exists():
+            problems.append(f"{slug}.html: redirect stub is missing")
+            continue
+        text = stub.read_text(encoding="utf-8")
+        if f"url={target}" not in text:
+            problems.append(f"{slug}.html: does not redirect to {target}")
+        if not (repo / target).exists():
+            problems.append(f"{slug}.html: redirect target {target} does not exist")
+    return problems
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", default="../eln_refactor")
@@ -108,17 +124,21 @@ def main(argv: list[str] | None = None) -> int:
     if missing:
         raise SystemExit(f"Not built — missing {', '.join(missing)}. Run build.py.")
 
+    redirect_pages = [build.REPO / f"{slug}.html" for slug in build.REDIRECTS]
+    all_pages = pages + redirect_pages
+
     problems = (
-        check_links(pages)
+        check_links(all_pages)
         + check_versions(pages, version)
-        + check_banned(pages)
+        + check_banned(all_pages)
+        + check_redirects(build.REPO)
     )
     for problem in problems:
         print(f"FAIL  {problem}")
     if problems:
         print(f"\n{len(problems)} problem(s) found.")
         return 1
-    print(f"OK    {len(pages)} pages clean at v{version}")
+    print(f"OK    {len(all_pages)} pages clean at v{version}")
     return 0
 
 

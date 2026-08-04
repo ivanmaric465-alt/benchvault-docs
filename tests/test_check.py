@@ -99,3 +99,29 @@ def test_banned_does_not_match_inside_a_longer_word(tmp_path):
     """'apk' must not fire on 'apkallu'; 'android' is a whole word."""
     write(tmp_path, "index.html", "<p>The apkallu sage</p>")
     assert check.check_banned([tmp_path / "index.html"]) == []
+
+
+def test_redirects_clean_when_stub_and_target_exist(tmp_path, monkeypatch):
+    monkeypatch.setattr(check.build, "REDIRECTS", {"OLD": "NEW.html"})
+    write(tmp_path, "OLD.html",
+          '<meta http-equiv="refresh" content="0; url=NEW.html">')
+    write(tmp_path, "NEW.html", "<p>new</p>")
+    assert check.check_redirects(tmp_path) == []
+
+
+def test_redirects_flag_a_mismatched_target(tmp_path, monkeypatch):
+    """The url= in the stub must match what REDIRECTS says, not just exist."""
+    monkeypatch.setattr(check.build, "REDIRECTS", {"OLD": "NEW.html"})
+    write(tmp_path, "OLD.html",
+          '<meta http-equiv="refresh" content="0; url=WRONG.html">')
+    write(tmp_path, "NEW.html", "<p>new</p>")
+    problems = check.check_redirects(tmp_path)
+    assert len(problems) == 1 and "does not redirect to NEW.html" in problems[0]
+
+
+def test_redirects_flag_a_missing_target(tmp_path, monkeypatch):
+    monkeypatch.setattr(check.build, "REDIRECTS", {"OLD": "NEW.html"})
+    write(tmp_path, "OLD.html",
+          '<meta http-equiv="refresh" content="0; url=NEW.html">')
+    problems = check.check_redirects(tmp_path)
+    assert len(problems) == 1 and "NEW.html does not exist" in problems[0]

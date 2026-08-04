@@ -66,7 +66,7 @@ variables exported in your host shell — including legacy desktop-era
 <code>POSTGRES_DB</code> or <code>POSTGRES_PASSWORD</code> — therefore cannot override it. What you
 put in this file is exactly what the containers get.</p>
 <p>The exception is values compose interpolates rather than passes through
-<code>env_file</code>: <code>HTTP_PORT</code>, <code>HTTPS_PORT</code>, <code>DOMAIN</code>, <code>BENCHVAULT_COOKIE_SECURE</code>,
+<code>env_file</code>: <code>HTTP_PORT</code>, <code>HTTPS_PORT</code>, <code>DOMAIN</code>, <code>TZ</code>, <code>BENCHVAULT_COOKIE_SECURE</code>,
 and <code>BENCHVAULT_ENABLE_API_DOCS</code> still follow normal shell precedence, so
 <code>HTTP_PORT=8080 docker compose up -d</code> works while
 <code>POSTGRES_PASSWORD=x docker compose up -d</code> silently does nothing.</p>
@@ -114,6 +114,10 @@ and <code>BENCHVAULT_ENABLE_API_DOCS</code> still follow normal shell precedence
 <tr>
 <td><code>BENCHVAULT_AUTO_BACKUP_INTERVAL_HOURS</code></td>
 <td>Optional. How often the automatic cloud backup runs when enabled in the app's Cloud Backup panel (default <code>24</code>).</td>
+</tr>
+<tr>
+<td><code>TZ</code></td>
+<td>Optional. Timezone for the api container (e.g. <code>Europe/Belgrade</code>). Aligns app-generated backup filenames and the Server card timestamps with the host clock used by <code>scripts/backup.sh</code> / <code>scripts/restore.sh</code>; the container defaults to <code>UTC</code>, which makes app backups appear hours behind host-time ones.</td>
 </tr>
 </tbody>
 </table>
