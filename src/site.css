@@ -302,6 +302,13 @@ pre {
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 0.9em;
+  /* Inline code (Windows paths, env vars) can be one long unbroken token
+     with no spaces to wrap at. Unlike table cells and <pre> blocks, inline
+     code sits in normal text flow with no scroll container of its own, so
+     without this it forces the whole page wider on narrow viewports. <pre>
+     is unaffected: its `white-space: pre` still wins over this for wrap
+     decisions, so code blocks keep scrolling horizontally as intended. */
+  overflow-wrap: anywhere;
 }
 
 .doc-body pre code {

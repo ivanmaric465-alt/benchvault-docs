@@ -51,3 +51,33 @@ For a visual pass at both breakpoints:
 ```bash
 node capture.mjs      # writes _shots/ (gitignored)
 ```
+
+This repo has no `node_modules` of its own — Playwright is not a dependency
+here. `capture.mjs` imports it directly from the sibling `benchvault`
+checkout's frontend install:
+
+```js
+import { chromium } from '../eln_refactor/frontend/node_modules/playwright/index.mjs'
+```
+
+That relative ESM specifier resolves normally as long as `benchvault-docs`
+and `benchvault` (`eln_refactor`) are checked out next to each other, e.g.
+`D:\CODE\benchvault-docs` and `D:\CODE\eln_refactor`. If your layout differs,
+adjust the path in `capture.mjs` (or point it at any other local Playwright
+install — `require('playwright').chromium` would do too).
+
+Two things that do **not** work, in case you're tempted:
+- `NODE_PATH=../eln_refactor/frontend/node_modules node capture.mjs` —
+  `NODE_PATH` is a CommonJS-era mechanism; Node's ESM resolver ignores it
+  entirely, so a bare `import { chromium } from 'playwright'` still fails
+  to resolve even with `NODE_PATH` set.
+- Running the script with its working directory set to
+  `../eln_refactor/frontend` — `capture.mjs` uses `process.cwd()` as both
+  the static file root it serves and the place it writes `_shots/`, so
+  changing `cwd` would serve the wrong site and write the captures into the
+  wrong repo.
+
+Playwright's browser binaries (Chromium etc.) are cached at the OS level
+(e.g. `~/AppData/Local/ms-playwright` on Windows), not inside
+`node_modules`, so they resolve correctly regardless of which repo the
+import path points through.
