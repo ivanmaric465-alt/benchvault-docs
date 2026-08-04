@@ -572,6 +572,19 @@ pre {
 
 .codeblock.hero-install code { color: inherit; }
 
+/* The base `pre` rule paints a light panel background for doc pages. Inside
+   the dark hero that would put near-white text on cream, and double the
+   padding and left border. Neutralise it here; the wrapper owns the styling. */
+.codeblock.hero-install pre {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
+  overflow-x: auto;
+  color: inherit;
+}
+
 .codeblock.hero-install .copy-btn {
   position: absolute;
   top: 0.6rem;
