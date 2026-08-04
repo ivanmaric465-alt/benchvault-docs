@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Deployment Guide — BenchVault v5.0.4</title>
+<title>Deployment Guide — BenchVault v5.0.5</title>
 <meta name="description" content="Deployment Guide for BenchVault, the self-hosted electronic lab notebook.">
 <link rel="icon" type="image/png" href="images/app_icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -41,7 +41,7 @@
 <a href="DOCKER_DEPLOY_GUIDE.html" aria-current="page">Deployment Guide</a>
 <a href="CHANGELOG.html">Changelog</a></nav>
   <article class="doc-body">
-    <p class="doc-eyebrow">BenchVault v5.0.4</p>
+    <p class="doc-eyebrow">BenchVault v5.0.5</p>
     <h1>Deployment Guide</h1>
     <p>Operating an existing BenchVault deployment: configuration, HTTPS, backups,
 upgrades, and diagnosis.</p>
@@ -113,7 +113,7 @@ and <code>BENCHVAULT_ENABLE_API_DOCS</code> still follow normal shell precedence
 </tr>
 <tr>
 <td><code>BENCHVAULT_AUTO_BACKUP_INTERVAL_HOURS</code></td>
-<td>Optional. How often the automatic cloud backup runs when enabled in the app's Cloud Backup panel (default <code>24</code>).</td>
+<td>Optional. How often the automatic cloud backup runs when enabled in the app's Database backup panel (default <code>24</code>).</td>
 </tr>
 <tr>
 <td><code>TZ</code></td>
@@ -193,7 +193,7 @@ database and the data volume through the running containers, writes the status
 files the Server section reads, and prunes old backups (30-day retention).
 With <code>--cloud</code> it packages the two artifacts into a single
 <code>benchvault-backup-&lt;timestamp&gt;.zip</code> and uploads that to the cloud provider
-configured in the app (Settings → Cloud Backup) — the cron-able equivalent of
+configured in the app (Database backup) — the cron-able equivalent of
 the in-app "Back up now" button, so each run appears as one backup file and
 backups live off-box even if the server dies. On-box, the raw pair
 (<code>benchvault-db-&lt;ts&gt;.sql.gz</code> + <code>benchvault-data-&lt;ts&gt;.tgz</code>) is kept for local
@@ -261,7 +261,7 @@ head and schema drift cannot accumulate on a supported install.</p>
 </main>
 
 <footer class="doc-footer">
-  <span>BenchVault v5.0.4 — AGPL-3.0-only</span>
+  <span>BenchVault v5.0.5 — AGPL-3.0-only</span>
   <a href="https://github.com/ivanmaric465-alt/benchvault">github.com/ivanmaric465-alt/benchvault</a>
 </footer>
 </body>
