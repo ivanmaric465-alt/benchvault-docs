@@ -52,12 +52,12 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <ul>
 <li><strong>AI assistant provider rework.</strong> Providers are now Anthropic, OpenAI,
   OpenRouter, and a Custom OpenAI-compatible endpoint (user base URL + key).
-  The AI settings form shows only the active provider's key field, and a
-  free-text "custom model id" overrides the default model (any provider
-  endpoint, e.g. <code>deepseek/deepseek-chat</code> on OpenRouter). The assistant chat
-  works with every provider through a shared OpenAI-compatible adapter
-  (OpenRouter now actually reachable), and curated per-provider model lists
-  are seeded into <code>AIModels</code> when the table is empty.</li>
+  The AI settings form shows only the active provider's key field; the
+  assistant chat works with every provider through a shared OpenAI-compatible
+  adapter (OpenRouter now actually reachable), and curated per-provider model
+  lists are seeded into <code>AIModels</code> when the table is empty. Saving AI
+  settings now refreshes the assistant drawer immediately (previously it kept
+  showing the old provider's models until a reload).</li>
 <li><strong>Account page removed; password moved to Preferences.</strong> The <code>/account</code>
   page (whose left panel only held a Password link) is gone — changing your
   password now lives under Preferences. Old <code>/account*</code> URLs redirect to the
