@@ -1,4 +1,379 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><title>BenchVault v{{VERSION}}</title>
-<link rel="stylesheet" href="site.css"></head>
-<body><h1>BenchVault v{{VERSION}}</h1></body></html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BenchVault — A self-hosted electronic lab notebook</title>
+<meta name="description" content="BenchVault is a self-hosted electronic lab notebook for research groups: experiments, chemical inventory, samples, and equipment booking. Installs with one Docker command. Open source, AGPL-3.0.">
+<link rel="icon" type="image/png" href="images/app_icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="site.css">
+</head>
+<body class="landing">
+<div class="spectrum-rule"></div>
+
+<header class="landing-nav" id="nav">
+  <div class="landing-nav-inner">
+    <a class="landing-brand" href="index.html">
+      <img src="images/app_icon.png" alt="" width="28" height="28">
+      <span>BenchVault</span>
+    </a>
+
+    <input type="checkbox" id="navToggle" class="landing-nav-check">
+    <label for="navToggle" class="landing-nav-burger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </label>
+
+    <nav class="landing-nav-links" aria-label="Primary">
+      <a href="#features">Features</a>
+      <a href="#modules">Modules</a>
+      <a href="#install">Install</a>
+      <a href="#docs">Docs</a>
+      <a href="https://github.com/ivanmaric465-alt/benchvault">GitHub</a>
+      <a class="btn btn-primary" href="#install">Get started</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-copy">
+        <p class="hero-badge">v{{VERSION}} &middot; AGPL-3.0</p>
+        <h1>A complete electronic lab notebook, running in ten minutes.</h1>
+        <p class="hero-sub">Experiments, chemical inventory, samples, and equipment booking for your whole research group — installed on one computer in your lab, used from any browser. Your data never leaves your hardware.</p>
+
+        <div class="codeblock hero-install">
+          <pre><code>git clone https://github.com/ivanmaric465-alt/benchvault.git
+cd benchvault &amp;&amp; cp .env.example .env
+docker compose up -d</code></pre>
+          <button class="copy-btn" type="button" data-copy>Copy</button>
+        </div>
+
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="INSTALL.html">Install guide</a>
+          <a class="btn btn-outline btn-outline-invert" href="https://github.com/ivanmaric465-alt/benchvault">View on GitHub</a>
+        </div>
+      </div>
+
+      <div class="hero-shot">
+        <div class="browser-frame">
+          <div class="browser-frame-bar">
+            <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
+            <span class="browser-frame-address">http://localhost</span>
+          </div>
+          <img src="images/dashboard-overview.png" alt="The BenchVault dashboard" width="1280" height="800" loading="eager">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="fact-strip reveal">
+    <div class="fact-strip-inner">
+      <div class="fact"><strong>Self-hosted</strong><span>Runs on your hardware</span></div>
+      <div class="fact"><strong>One command</strong><span>docker compose up -d</span></div>
+      <div class="fact"><strong>PostgreSQL 16</strong><span>Your data, in a real database</span></div>
+      <div class="fact"><strong>AGPL-3.0</strong><span>Open source, no subscription</span></div>
+    </div>
+  </section>
+
+  <section class="about reveal">
+    <div class="landing-container about-inner">
+      <h2>Built for one research group</h2>
+      <p>One person installs BenchVault on a computer in the lab. Everyone else opens a link in their browser — nothing to install, nothing to configure, and no accounts on somebody else's servers.</p>
+      <p>Two roles keep it simple. <strong>Master</strong> users manage everything and create the accounts; <strong>Regular</strong> users work with their own records while seeing the lab's shared data. The first account created becomes the lab's Master.</p>
+    </div>
+  </section>
+
+  <section class="modules reveal" id="modules">
+    <div class="landing-container">
+      <p class="doc-eyebrow">In the app</p>
+      <h2>Everything a lab actually tracks</h2>
+
+      <div class="module-row">
+        <div class="module-row-text">
+          <h3>Experiments</h3>
+          <p>Procedures, parameters, and reactants pulled straight from your inventory — with a built-in calculator that works out masses, volumes, and stock-solution pipetting from a target molarity. Tag them, attach files, and export to PDF.</p>
+        </div>
+        <div class="module-row-media">
+          <button class="shot" type="button" data-zoom>
+            <img src="images/experiment-reactants.png" alt="Editing a reactant's target molarity in an experiment, with the mass to weigh calculated automatically" loading="lazy">
+          </button>
+        </div>
+      </div>
+
+      <div class="module-row reverse">
+        <div class="module-row-text">
+          <h3>Inventory</h3>
+          <p>Chemical stock with low-stock alerts and Excel import and export. When a reactant goes into an experiment, its quantity comes out of stock automatically, so the numbers stay honest without anyone remembering to update them.</p>
+        </div>
+        <div class="module-row-media">
+          <button class="shot" type="button" data-zoom>
+            <img src="images/inventory-list.png" alt="Chemical inventory list with a low-stock item flagged" loading="lazy">
+          </button>
+        </div>
+      </div>
+
+      <div class="module-row">
+        <div class="module-row-text">
+          <h3>Samples</h3>
+          <p>Every sample stays linked to the experiment that produced it, and holds its own analyses and data files — NMR, HPLC, MS, whatever your lab runs. Print a QR code and the sample scans back to its record.</p>
+        </div>
+        <div class="module-row-media">
+          <button class="shot" type="button" data-zoom>
+            <img src="images/sample-detail.png" alt="Sample detail page showing an NMR analysis linked to its parent experiment" loading="lazy">
+          </button>
+        </div>
+      </div>
+
+      <div class="module-row reverse">
+        <div class="module-row-text">
+          <h3>Equipment</h3>
+          <p>Book instruments on a weekly calendar. Double-bookings are rejected as you make them, not discovered the morning of, and confirmations go out by email.</p>
+        </div>
+        <div class="module-row-media">
+          <button class="shot" type="button" data-zoom>
+            <img src="images/equipment-week-grid.png" alt="Weekly booking calendar for the Rotary Evaporator with a reservation placed" loading="lazy">
+          </button>
+        </div>
+      </div>
+
+      <div class="module-row">
+        <div class="module-row-text">
+          <h3>Graph</h3>
+          <p>See how the work connects: which experiments produced which samples, which analyses came off them, and which chemicals they share. The questions that are tedious in a spreadsheet are a glance here.</p>
+        </div>
+        <div class="module-row-media">
+          <button class="shot" type="button" data-zoom>
+            <img src="images/graph-view.png" alt="Knowledge graph linking an experiment to the chemical it used" loading="lazy">
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="included reveal" id="features">
+    <div class="landing-container">
+      <h2>And the rest of the day-to-day</h2>
+
+      <div class="included-grid">
+        <button class="card card-shot" type="button" data-zoom>
+          <img src="images/templates-list.png" alt="Templates list with two reusable experiment templates" loading="lazy">
+          <span class="card-title">Templates</span>
+          <span class="card-line">Save any experiment as a reusable starting point, reactants and all.</span>
+        </button>
+
+        <button class="card card-shot" type="button" data-zoom>
+          <img src="images/search-results.png" alt="Advanced search across every module with tag filters" loading="lazy">
+          <span class="card-title">Search &amp; Tags</span>
+          <span class="card-line">Find anything across every module, organised by a tag vocabulary the whole lab shares.</span>
+        </button>
+
+        <button class="card card-shot" type="button" data-zoom>
+          <img src="images/ai-assistant.png" alt="AI Assistant chat drawer answering a question about the lab's data" loading="lazy">
+          <span class="card-title">AI Assistant</span>
+          <span class="card-line">A chat drawer that answers questions about your lab's data. Requires your own API key, and sends data to that provider — enable it deliberately.</span>
+        </button>
+
+        <button class="card card-shot" type="button" data-zoom>
+          <img src="images/admin-audit-log.png" alt="Audit log showing a field-by-field change history" loading="lazy">
+          <span class="card-title">Audit Log</span>
+          <span class="card-line">Who changed what, when, field by field. Master users only.</span>
+        </button>
+
+        <div class="card">
+          <span class="card-title">Email alerts</span>
+          <span class="card-line">Reservation confirmations, low-stock warnings, and an optional weekly summary.</span>
+        </div>
+
+        <div class="card">
+          <span class="card-title">Cloud backup</span>
+          <span class="card-line">Scheduled backups to Koofr, Nextcloud, pCloud, Box, or any WebDAV server.</span>
+        </div>
+
+        <div class="card">
+          <span class="card-title">PDF &amp; Excel export</span>
+          <span class="card-line">Export one experiment or a batch, with formatting intact.</span>
+        </div>
+
+        <div class="card">
+          <span class="card-title">Roles &amp; permissions</span>
+          <span class="card-line">Master and Regular users, with ownership enforced on every record.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="install-section reveal" id="install">
+    <div class="landing-container">
+      <h2>Running in ten minutes</h2>
+      <p class="section-sub">No database to set up, no Python to install, no configuration files to learn.</p>
+
+      <ol class="steps">
+        <li>
+          <span class="step-num">1</span>
+          <div class="step-body">
+            <h3>Install Docker</h3>
+            <p>Docker Desktop on Windows or macOS, Docker Engine plus the Compose plugin on Linux. It runs pre-packaged containers, which is why BenchVault brings its own database and needs nothing else from you.</p>
+          </div>
+        </li>
+        <li>
+          <span class="step-num">2</span>
+          <div class="step-body">
+            <h3>Set a password</h3>
+            <p>Copy .env.example to .env and change POSTGRES_PASSWORD. Nobody ever types this password — it is only how BenchVault's own pieces talk to each other. Just don't leave it as change-me.</p>
+          </div>
+        </li>
+        <li>
+          <span class="step-num">3</span>
+          <div class="step-body">
+            <h3>Start it</h3>
+            <p>Run docker compose up -d and open the address it prints. Create the first account, and that account becomes your lab's Master.</p>
+          </div>
+        </li>
+      </ol>
+
+      <figure class="install-shot">
+        <img src="images/setup-founder.png" alt="Creating the first BenchVault account" loading="lazy">
+      </figure>
+
+      <div class="callout-warning">
+        <p><strong>Claim the first account immediately.</strong> Until someone does, registration is open and anyone who can reach the address can take the Master account. Create it before sharing the link.</p>
+      </div>
+
+      <p class="install-note">The <a href="INSTALL.html">Install Guide</a> covers this properly — letting other computers reach it, setting up a domain with HTTPS, and what to do when something goes wrong.</p>
+    </div>
+  </section>
+
+  <section class="requirements reveal">
+    <div class="landing-container">
+      <h2>What you need</h2>
+
+      <div class="requirements-grid">
+        <div>
+          <h3>Requirements</h3>
+          <ul>
+            <li>One computer that stays switched on (Windows, macOS, or Linux)</li>
+            <li>Docker</li>
+            <li>4 GB RAM, 8 GB comfortable</li>
+            <li>A web browser for everyone else</li>
+          </ul>
+          <p class="requirements-note">PostgreSQL, Python, and Node all ship inside BenchVault's containers. You never install or configure any of them.</p>
+        </div>
+        <div>
+          <h3>Stack</h3>
+          <ul>
+            <li>React 18 + TypeScript + Mantine v7</li>
+            <li>FastAPI (Python)</li>
+            <li>PostgreSQL 16</li>
+            <li>Caddy — automatic HTTPS</li>
+            <li>Docker Compose</li>
+            <li>JWT authentication</li>
+            <li>AGPL-3.0-only</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="docs-section reveal" id="docs">
+    <div class="landing-container">
+      <h2>Documentation</h2>
+
+      <div class="docs-grid">
+        <a class="doc-card" href="INSTALL.html">
+          <span class="doc-card-title">Install Guide</span>
+          <span class="doc-card-line">Getting BenchVault running for the first time</span>
+        </a>
+        <a class="doc-card" href="USER_GUIDE.html">
+          <span class="doc-card-title">User Guide</span>
+          <span class="doc-card-line">Day-to-day use of every module</span>
+        </a>
+        <a class="doc-card" href="ADMIN_GUIDE.html">
+          <span class="doc-card-title">Administrator Guide</span>
+          <span class="doc-card-line">Accounts, settings, audit log, backups</span>
+        </a>
+        <a class="doc-card" href="DOCKER_DEPLOY_GUIDE.html">
+          <span class="doc-card-title">Deployment Guide</span>
+          <span class="doc-card-line">Domains, HTTPS, backups, upgrades</span>
+        </a>
+        <a class="doc-card" href="CHANGELOG.html">
+          <span class="doc-card-title">Changelog</span>
+          <span class="doc-card-line">What changed in each release</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="landing-footer">
+  <div class="landing-container landing-footer-inner">
+    <a class="landing-brand" href="index.html">
+      <img src="images/app_icon.png" alt="" width="28" height="28">
+      <span>BenchVault</span>
+    </a>
+
+    <nav class="landing-footer-links" aria-label="Documentation">
+      <a href="INSTALL.html">Install Guide</a>
+      <a href="USER_GUIDE.html">User Guide</a>
+      <a href="ADMIN_GUIDE.html">Administrator Guide</a>
+      <a href="DOCKER_DEPLOY_GUIDE.html">Deployment Guide</a>
+      <a href="CHANGELOG.html">Changelog</a>
+      <a href="https://github.com/ivanmaric465-alt/benchvault">GitHub</a>
+    </nav>
+
+    <div class="landing-footer-meta">
+      <span>BenchVault v{{VERSION}} — AGPL-3.0-only</span>
+      <span>&copy; 2026 Ivan Maric</span>
+    </div>
+  </div>
+</footer>
+
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" type="button" aria-label="Close">&times;</button>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<script>
+// Nav gains its panel background once the hero scrolls away.
+const nav = document.getElementById('nav');
+addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 40));
+
+// Reveal sections as they enter the viewport.
+const io = new IntersectionObserver((entries) => {
+  entries.forEach((e) => e.isIntersecting && e.target.classList.add('in'));
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+
+// Screenshot lightbox.
+const box = document.getElementById('lightbox');
+const boxImg = document.getElementById('lightbox-img');
+document.querySelectorAll('[data-zoom]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const img = btn.querySelector('img');
+    boxImg.src = img.src;
+    boxImg.alt = img.alt;
+    box.classList.add('open');
+  });
+});
+const closeBox = () => box.classList.remove('open');
+box.addEventListener('click', closeBox);
+addEventListener('keydown', (e) => e.key === 'Escape' && closeBox());
+
+// Copy button on the install command.
+document.querySelectorAll('[data-copy]').forEach((btn) => {
+  btn.addEventListener('click', async () => {
+    await navigator.clipboard.writeText(
+      btn.closest('.codeblock').querySelector('code').innerText.trim()
+    );
+    btn.textContent = 'Copied';
+    setTimeout(() => { btn.textContent = 'Copy'; }, 1600);
+  });
+});
+</script>
+</body>
+</html>
