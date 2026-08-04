@@ -187,9 +187,13 @@ backup.</p>
 <p><strong>Scripted backups.</strong> <code>scripts/backup.sh</code> is Docker-native: it dumps the
 database and the data volume through the running containers, writes the status
 files the Server section reads, and prunes old backups (30-day retention).
-With <code>--cloud</code> it also uploads both artifacts to the cloud provider configured
-in the app (Settings → Cloud Backup) — the cron-able equivalent of the in-app
-"Back up now" button, so backups live off-box even if the server dies.</p>
+With <code>--cloud</code> it packages the two artifacts into a single
+<code>benchvault-backup-&lt;timestamp&gt;.zip</code> and uploads that to the cloud provider
+configured in the app (Settings → Cloud Backup) — the cron-able equivalent of
+the in-app "Back up now" button, so each run appears as one backup file and
+backups live off-box even if the server dies. On-box, the raw pair
+(<code>benchvault-db-&lt;ts&gt;.sql.gz</code> + <code>benchvault-data-&lt;ts&gt;.tgz</code>) is kept for local
+restores and retention.</p>
 <pre><code class="language-bash">bash scripts/backup.sh                     # on-box only
 bash scripts/backup.sh --cloud             # on-box + upload to the app's cloud provider
 # cron (daily 03:00, on-box + cloud):

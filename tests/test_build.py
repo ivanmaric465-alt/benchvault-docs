@@ -41,6 +41,19 @@ def test_rewrite_doc_links_leaves_unpublished_documents_alone():
     assert build.rewrite_doc_links(html) == html
 
 
+def test_rewrite_repo_links_sends_parent_paths_to_github():
+    html = '<a href="../LICENSE">LICENSE</a>'
+    assert build.rewrite_repo_links(html) == (
+        '<a href="https://github.com/ivanmaric465-alt/benchvault/blob/main/LICENSE">'
+        'LICENSE</a>'
+    )
+
+
+def test_rewrite_repo_links_leaves_local_paths_alone():
+    html = '<a href="INSTALL.html">i</a><img src="images/login.png">'
+    assert build.rewrite_repo_links(html) == html
+
+
 def test_strip_leading_h1_removes_only_the_first_heading():
     html = '<h1 id="t">BenchVault v5.0.3 — Admin</h1>\n<p>Body</p>\n<h1>Later</h1>'
     result = build.strip_leading_h1(html)

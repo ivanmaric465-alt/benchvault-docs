@@ -89,6 +89,17 @@ def rewrite_doc_links(html: str) -> str:
     return html
 
 
+# Links pointing above the docs directory target files in the application
+# repository. The flat static site has no copy of those, so send them to
+# GitHub, where they exist.
+GITHUB_BLOB = "https://github.com/ivanmaric465-alt/benchvault/blob/main/"
+
+
+def rewrite_repo_links(html: str) -> str:
+    """Retarget links to application-repo files at GitHub."""
+    return re.sub(r'href="\.\./([^"]+)"', rf'href="{GITHUB_BLOB}\1"', html)
+
+
 def strip_leading_h1(html: str) -> str:
     """Drop the document's own H1; the layout renders title and version."""
     return re.sub(r"\A\s*<h1[^>]*>.*?</h1>\s*", "", html, count=1, flags=re.S)
@@ -154,7 +165,9 @@ def main(argv: list[str] | None = None) -> int:
 
     for slug, title in DOCS:
         md_text = (docs_dir / f"{slug}.md").read_text(encoding="utf-8")
-        content = strip_leading_h1(rewrite_doc_links(render_markdown(md_text)))
+        content = strip_leading_h1(
+            rewrite_repo_links(rewrite_doc_links(render_markdown(md_text)))
+        )
         page = render_page(
             layout, title=title, version=version,
             nav=build_nav(slug), content=content,

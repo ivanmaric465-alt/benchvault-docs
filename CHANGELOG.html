@@ -48,6 +48,18 @@
 and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
 <hr />
 <h2 id="unreleased">[Unreleased]</h2>
+<h3 id="changed">Changed</h3>
+<ul>
+<li><strong><code>scripts/backup.sh --cloud</code> uploads one file per run.</strong> The db dump and
+  data-volume archive are packaged into a single
+  <code>benchvault-backup-&lt;timestamp&gt;.zip</code> before upload, so scripted runs appear
+  as one backup file in the cloud (matching the in-app zips) instead of two
+  type-grouped artifacts. On-box, the raw
+  <code>benchvault-db-&lt;ts&gt;.sql.gz</code> / <code>benchvault-data-&lt;ts&gt;.tgz</code> pair is still kept
+  for local restores and retention. <code>scripts/restore.sh</code> detects the wrapper
+  zip by content and restores both halves (database dump, then data volume);
+  the app-format <code>BenchVault_Backup_*.zip</code> path is unchanged.</li>
+</ul>
 <h3 id="fixed">Fixed</h3>
 <ul>
 <li><strong><code>scripts/restore.sh</code> / <code>restore-test.sh</code> "latest" selection.</strong> The picker
@@ -76,7 +88,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
   now written to the api container on exit — the Backup card reflects it.</li>
 </ul>
 <h2 id="504-2026-08-04">[5.0.4] - 2026-08-04</h2>
-<h3 id="changed">Changed</h3>
+<h3 id="changed_1">Changed</h3>
 <ul>
 <li><strong>Automatic backups explained in the UI.</strong> The Cloud Backup panel's toggle
   now says how the scheduler works: the API checks every 15 minutes and
@@ -103,12 +115,12 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
   shows a short preview of the release notes (with a link to the full notes).</li>
 </ul>
 <h2 id="502-2026-08-04">[5.0.2] - 2026-08-04</h2>
-<h3 id="changed_1">Changed</h3>
+<h3 id="changed_2">Changed</h3>
 <ul>
 <li><strong>License: MIT → AGPL-3.0-only.</strong> BenchVault is now licensed under the GNU
   Affero General Public License v3.0 (network copyleft: anyone who modifies
   and serves the app must share their modifications). Self-hosting an
-  unmodified copy carries no obligations. See <a href="../LICENSE">LICENSE</a>.</li>
+  unmodified copy carries no obligations. See <a href="https://github.com/ivanmaric465-alt/benchvault/blob/main/LICENSE">LICENSE</a>.</li>
 <li><strong>Server → Updates card now shows the automatic update check.</strong> The card
   previously displayed the legacy cron-script status, which Docker installs
   never populate ("Update checks are not configured on this server"). It now
@@ -267,7 +279,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
   with a single manual <strong>Refresh</strong> (no background polling). Frontend-only, over the existing
   <code>/health</code>, <code>/dashboard/database-health</code>, and <code>/info</code> APIs. (<code>frontend/</code>)</li>
 </ul>
-<h3 id="changed_2">Changed</h3>
+<h3 id="changed_3">Changed</h3>
 <ul>
 <li><strong>Auth error code</strong>: A missing or malformed <code>Authorization</code> header now returns <code>401 Unauthorized</code> (with a <code>WWW-Authenticate: Bearer</code> challenge) instead of <code>403 Forbidden</code>, per RFC 7235. <code>403</code> remains reserved for authenticated-but-forbidden requests (wrong role / not the owner). Implemented via <code>HTTPBearer(auto_error=False)</code> + an explicit check in <code>verify_token</code>.</li>
 <li><strong>Analysis date now required server-side</strong>: <code>POST /samples/{id}/analyses</code> and <code>PUT /analyses/{id}</code> reject a missing, blank, or whitespace-only <code>analysis_date</code> with <code>422</code> (previously it defaulted to an empty string). Since the date columns are free-text, a blank date used to persist and later break date-based reads; validation now enforces a non-empty, trimmed date at the API boundary. The web <code>AnalysisCreatePayload.analysis_date</code> type is correspondingly required. (<code>api/</code>, <code>frontend/</code>)</li>
@@ -293,7 +305,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li><strong>Contributor guide</strong>: New <code>CONTRIBUTING.md</code> documents local setup, tests, linting, the Alembic migration workflow, and the Docker stack.</li>
 <li><strong>Record integrity (server/API)</strong>: Experiments now use optimistic locking — a concurrent edit to the same experiment returns <code>409</code> instead of silently overwriting. Deleting an Experiment or Sample now moves it to a recoverable <strong>Trash</strong> (soft delete) with Restore; only a Master can permanently <strong>Purge</strong>. Trash/Restore never change inventory; purging an experiment is blocked while any sample still references it. (Schema via Alembic revision <code>0002</code>. Desktop/mobile UI to follow.)</li>
 </ul>
-<h3 id="changed_3">Changed</h3>
+<h3 id="changed_4">Changed</h3>
 <ul>
 <li><strong>Lint gate</strong>: Added a conservative ruff configuration (<code>pyproject.toml</code>, pyflakes + core pycodestyle) and cleaned the lint baseline — removed unused imports and dead assignments across the codebase. CI now gates on <code>ruff check</code>.</li>
 </ul>
@@ -311,7 +323,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li><strong>Re-installation Detection</strong>: VPS provisioning script detects existing <code>.env</code> and reuses domain, email, database name, user, and password without prompting. Suppresses first-time endpoint and bootstrap instructions on reruns.</li>
 <li><strong>Server Update Checker</strong>: Daily cron checks the BenchVault repo for available updates and surfaces a notification in <strong>Server -&gt; Server Info</strong> when a newer commit is available.</li>
 </ul>
-<h3 id="changed_4">Changed</h3>
+<h3 id="changed_5">Changed</h3>
 <ul>
 <li><strong>Client Resilience</strong>: The desktop <code>ApiClient</code> now retries transient failures with backoff — connection errors are retried for any request (nothing reached the server), while timeouts and <code>502/503/504</code> responses are retried for reads (<code>GET</code>) only.</li>
 <li><strong>SQL-Side Pagination</strong>: Experiment and inventory listings now apply <code>limit</code>/<code>offset</code>/<code>search</code> in SQL instead of fetching every row and filtering in Python.</li>
@@ -349,7 +361,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li><strong>Login Remember Option</strong>: Desktop login can remember the server URL and username without storing passwords.</li>
 <li><strong>VPS Clean Slate Uninstall</strong>: VPS uninstall tooling can remove BenchVault services, app files, nginx config, certificates, service users, runtime directories, and the configured database/user for a fresh redeploy.</li>
 </ul>
-<h3 id="changed_5">Changed</h3>
+<h3 id="changed_6">Changed</h3>
 <ul>
 <li><strong>Desktop Login</strong>: Removed the Register tab from the desktop login dialog; users must receive accounts from a Master user.</li>
 <li><strong>Password Policy</strong>: Standardized account and password-change minimum length to 8 characters.</li>
@@ -369,7 +381,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <hr />
 <h2 id="411-2026-06-09">[4.1.1] - 2026-06-09</h2>
 <p><strong>API Access Mode Clarification</strong></p>
-<h3 id="changed_6">Changed</h3>
+<h3 id="changed_7">Changed</h3>
 <ul>
 <li><strong>Direct LAN Access</strong>: Renamed the desktop LAN exposure control to <strong>Allow Direct LAN Access</strong> to distinguish same-network access from ngrok/tunnel and VPS access.</li>
 <li><strong>API Access Documentation</strong>: Clarified local/tunnel, direct-LAN, and VPS API connection modes across user, installation, and mobile setup docs.</li>
@@ -393,7 +405,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li><strong>Calendar API</strong> (<code>/api/v1/calendar/month</code>, <code>/date</code>, <code>/range</code>): calendar events served through API for Remote mode.</li>
 <li><strong>Password Change API</strong> (<code>POST /api/v1/auth/me/change-password</code>): self-service password change with old-password verification.</li>
 </ul>
-<h3 id="changed_7">Changed</h3>
+<h3 id="changed_8">Changed</h3>
 <ul>
 <li><strong>Login Flow</strong>: Removed Local/Remote mode radio buttons; login dialog now only asks for server URL (default <code>http://localhost:8000</code>) + credentials.</li>
 <li><strong>Desktop Data Access</strong>: All GUI windows and dialogs now call <code>api_client/*</code> modules through the <code>RemoteDatabaseManager</code> facade; zero <code>get_connection()</code> / <code>return_connection()</code> calls remain in desktop code.</li>
@@ -460,7 +472,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li><strong>Email failure visibility</strong>: key failure points (missing SMTP settings, undecryptable password) logged at <code>WARNING</code> instead of <code>DEBUG</code> level</li>
 <li><strong><code>.planning/</code> directory</strong>: removed 25 tracked planning files from repository (now fully gitignored)</li>
 </ul>
-<h3 id="changed_8">Changed</h3>
+<h3 id="changed_9">Changed</h3>
 <ul>
 <li><code>send_equipment_notification()</code> returns <code>(sent_count, total_count)</code> tuple</li>
 <li><code>send_critical_inventory_alert()</code> returns <code>bool</code></li>
@@ -479,7 +491,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li><strong>Linux Installation Guide</strong> (<code>LINUX_INSTALLATION_GUIDE.md</code>): source-run setup, PostgreSQL service, data locations</li>
 <li><strong>New Tests</strong>: 32 platform-path, runtime, backup-path, and build-config tests (74 total test suite)</li>
 </ul>
-<h3 id="changed_9">Changed</h3>
+<h3 id="changed_10">Changed</h3>
 <ul>
 <li><strong>Desktop/API Paths</strong>: migrated config, log, backup, email, and attachment directories to <code>platform_paths</code></li>
 <li><strong>Runtime</strong>: consolidated <code>os.startfile</code>/<code>open</code>/<code>xdg-open</code> into <code>platform_runtime.open_file()</code></li>
@@ -512,7 +524,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li><strong>Per-Test DB Cleanup</strong>: <code>cleanup_db</code> autouse fixture truncates data tables after each test</li>
 <li><strong>Inventory Consumption Audit</strong>: Structured audit details for inventory deductions, restores, manual edits, and experiment delete policy choices</li>
 </ul>
-<h3 id="changed_10">Changed</h3>
+<h3 id="changed_11">Changed</h3>
 <ul>
 <li><strong>DB Layer Split</strong>: <code>db_manager.py</code> 3,821 → 1,473 lines (-61%) via 10 domain managers (Audit, User, Template, Tag, Sample, Equipment, Inventory, Experiment, Settings, Calendar)</li>
 <li><strong>BaseManager Adoption</strong>: All 10 managers extend BaseManager and use <code>_transaction()</code> context manager</li>
@@ -545,7 +557,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li>Master users can add any OpenRouter-supported model by typing the model ID</li>
 <li><code>openai</code> package added to requirements</li>
 </ul>
-<h3 id="changed_11">Changed</h3>
+<h3 id="changed_12">Changed</h3>
 <ul>
 <li>Refactored <code>ChatWorker</code> to use provider adapters instead of direct Anthropic SDK calls</li>
 <li>Widened <code>AppSettings.SettingValue</code> column to <code>VARCHAR(500)</code> for encrypted keys</li>
@@ -562,7 +574,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <hr />
 <h2 id="340-2026-03-23">[3.4.0] - 2026-03-23</h2>
 <p><strong>Performance — Batch DB Queries</strong></p>
-<h3 id="changed_12">Changed</h3>
+<h3 id="changed_13">Changed</h3>
 <ul>
 <li><strong>Equipment Scheduler</strong>: Batch-fetch all week's reservations in one query instead of 7 (one per day)</li>
 <li><strong>Samples Window</strong>: Batch-fetch tags and analysis counts for all samples (2 queries instead of N×2)</li>
@@ -582,7 +594,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <hr />
 <h2 id="332-2026-03-20">[3.3.2] - 2026-03-20</h2>
 <p><strong>Security Hardening</strong></p>
-<h3 id="changed_13">Changed</h3>
+<h3 id="changed_14">Changed</h3>
 <ul>
 <li><strong>Database</strong>: Switched <code>SimpleConnectionPool</code> to <code>ThreadedConnectionPool</code> for thread safety</li>
 <li><strong>API</strong>: JWT secret now persisted to <code>AppData/Local/BenchVault/jwt_secret.key</code> — mobile tokens survive server restarts</li>
@@ -607,7 +619,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 </ul>
 <hr />
 <h2 id="330-2026-03-20">[3.3.0] - 2026-03-20</h2>
-<h3 id="changed_14">Changed</h3>
+<h3 id="changed_15">Changed</h3>
 <ul>
 <li><strong>Font</strong>: Switched app font from Arial to Segoe UI globally (theme, all dialogs, app-wide default via <code>QApplication.setFont()</code>)</li>
 <li><strong>UI</strong>: Fixed combo box dropdown text visibility — removed <code>background-color</code> from <code>combo_box_style()</code> that caused item text to be obscured on hover</li>
@@ -620,7 +632,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 </ul>
 <hr />
 <h2 id="323-2026-03-20">[3.2.3] - 2026-03-20</h2>
-<h3 id="changed_15">Changed</h3>
+<h3 id="changed_16">Changed</h3>
 <ul>
 <li><strong>UI</strong>: Login/Register tabs now use centralized <code>tab_widget_style()</code> matching experiment section tabs</li>
 <li><strong>UI</strong>: All data tables (inventory, templates, activity log, audit log, experiments list) now have <code>NoEditTriggers</code> — cells no longer appear hoverable or editable</li>
@@ -634,7 +646,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li><strong>UI</strong>: Added <code>disabled_nav_button_style()</code> to theme system for grayed-out module buttons</li>
 </ul>
 <h2 id="322-2026-03-19">[3.2.2] - 2026-03-19</h2>
-<h3 id="changed_16">Changed</h3>
+<h3 id="changed_17">Changed</h3>
 <ul>
 <li><strong>UI</strong>: Centralized theme system (<code>styles/theme.py</code>) with consistent button styles, hover/disabled states, colors, and fonts across all windows and dialogs</li>
 <li><strong>UI</strong>: Samples table cells are no longer individually selectable or editable-looking (added <code>NoEditTriggers</code>)</li>
@@ -773,7 +785,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 </ul>
 <hr />
 <h2 id="305-2026-02-25">[3.0.5] - 2026-02-25</h2>
-<h3 id="changed_17">Changed</h3>
+<h3 id="changed_18">Changed</h3>
 <ul>
 <li><strong>User Guide</strong>: Keyboard shortcuts table fully corrected (split into General / Navigation / In Dialogs sections matching the in-app help dialog; removed non-existent Ctrl+S, Ctrl+R, Ctrl+Q entries; added missing Ctrl+I, Ctrl+E, Ctrl+T, Ctrl+Shift+S, Ctrl+Shift+V).</li>
 <li><strong>User Guide</strong>: Added "Importing from Excel" section to Inventory module documenting the column mapping dialog, live preview, template download, and post-import warnings.</li>
@@ -894,7 +906,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li><strong>Included in installer</strong>: Start Menu shortcut for "Password Reset Utility"</li>
 <li><strong>PyInstaller packaged</strong>: Single-file executable for .exe distributions</li>
 </ul>
-<h3 id="changed_18">Changed</h3>
+<h3 id="changed_19">Changed</h3>
 <ul>
 <li><strong>API server routing</strong>: Changed from catch-all StaticFiles mount to explicit routes for Flutter web files</li>
 <li><strong>AddReactantDialog</strong>: Fixed field visibility initialization when Final Volume is not set</li>
@@ -1028,7 +1040,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li><strong>Procedure editing</strong> in experiment detail view</li>
 <li>Fixed: PUT endpoint path for experiment updates</li>
 </ul>
-<h3 id="changed_19">Changed</h3>
+<h3 id="changed_20">Changed</h3>
 <ul>
 <li><strong>Project Info dialog</strong> now shows comprehensive project statistics</li>
 <li><strong>Menu structure</strong> updated with Cloud Backup option under File menu</li>
@@ -1146,7 +1158,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li><code>main.py</code>: ✓ → [OK], ⚠ → [WARN], 🧪 → [BenchVault], 📁 → [Project], etc.</li>
 <li><strong>Impact</strong>: API server and database initialization now work successfully on Windows without encoding errors</li>
 </ul>
-<h3 id="changed_20">Changed</h3>
+<h3 id="changed_21">Changed</h3>
 <h4 id="database-creation-removed-from-setup-wizard-design-improvement">Database Creation Removed from Setup Wizard (Design Improvement)</h4>
 <ul>
 <li><strong>Issue</strong>: Setup wizard hardcoded database name to 'lab_notebook', conflicting with BenchVault's multi-project flexibility</li>
@@ -1396,7 +1408,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li><strong>Solution</strong>: Added <code>show_invalid_warning</code> parameter to skip warning in this case</li>
 <li><strong>Impact</strong>: Better UX when creating projects</li>
 </ul>
-<h3 id="changed_21">Changed</h3>
+<h3 id="changed_22">Changed</h3>
 <h4 id="build-system">Build System</h4>
 <ul>
 <li>Added reportlab data file collection to <code>build_desktop.spec</code> and <code>build_client.spec</code></li>
@@ -1443,7 +1455,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li>Development paths: <code>&lt;project_root&gt;/postgresql_portable/bin/</code></li>
 <li><strong>Impact</strong>: Database backup and restore now work correctly with bundled portable PostgreSQL</li>
 </ul>
-<h3 id="changed_22">Changed</h3>
+<h3 id="changed_23">Changed</h3>
 <h4 id="project-selector-ui">Project Selector UI</h4>
 <ul>
 <li>Invalid projects now shown in red text with ⚠ warning symbol</li>
@@ -1540,7 +1552,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li><strong>MOBILE_APP_QUICKSTART.md</strong> - Quick mobile app testing guide</li>
 <li><strong>PROJECT_SYSTEM_GUIDE.md</strong> - Multi-project/database management</li>
 </ul>
-<h3 id="changed_23">Changed</h3>
+<h3 id="changed_24">Changed</h3>
 <h4 id="application-branding">Application Branding</h4>
 <ul>
 <li><strong>Application renamed</strong> from "Electronic Lab Notebook" to "BenchVault"</li>
@@ -1747,7 +1759,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li><strong>Comprehensive error handling</strong> with informative error messages</li>
 <li><strong>Logging system</strong> for debugging and monitoring</li>
 </ul>
-<h3 id="changed_24">Changed</h3>
+<h3 id="changed_25">Changed</h3>
 <h4 id="database-architecture">Database Architecture</h4>
 <ul>
 <li><strong>Migrated from SQLite to PostgreSQL</strong> for multi-user support</li>
